@@ -357,6 +357,8 @@ switch(reason) {
                   meshCaseT);
 
     bool first = true;
+    uint16_t flow_ec = 0;
+    bool have_flow = false;
 
     for (uint8_t si = 1; si < count && si < 4; si++) {
       uint32_t sid;
@@ -378,6 +380,8 @@ switch(reason) {
         // FLOW: [flowRate, totalLiters, vbat, rssi]
         float flowRate    = h / 10.0f;
         float totalLiters = ec + ph10 / 1000.0f;
+        flow_ec = ec;
+        have_flow = true;
         n += snprintf(out + n, sizeof(out) - n,
                       "%s[%.1f,%.3f,%u,%d]",
                       first ? "" : ",",
@@ -394,7 +398,10 @@ switch(reason) {
       if (n > (int)sizeof(out) - 48) break;
     }
 
-    n += snprintf(out + n, sizeof(out) - n, "]}");
+    if (have_flow)
+      n += snprintf(out + n, sizeof(out) - n, "],\"wf\":%u}", (unsigned)flow_ec);
+    else
+      n += snprintf(out + n, sizeof(out) - n, "]}");
     out[sizeof(out) - 1] = '\0';
 
     Serial.printf("[OUT] %s\n", out);
