@@ -4,6 +4,7 @@
 #include <RadioLib.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+#include "credentials.h"
 
 // =====================================================
 // LORA_VV_RECEIVER_MQTT_HELTEC_V2
@@ -16,15 +17,9 @@
 //   - OLED toont uptime, RX teller, RSSI/SNR
 // =====================================================
 
-// ---------- WIFI ----------
-const char* ssid     = "TP-Link_Extender";
-const char* password = "rgNmQFewn3a9";
-
 // ---------- MQTT ----------
-const char* mqtt_server = "192.168.2.5";
+const char* mqtt_server = "192.168.2.13";
 const int   mqtt_port   = 1883;
-const char* mqtt_user   = "mqtt-user";
-const char* mqtt_pass   = "b0r1b0r1";
 const char* mqtt_topic  = "tuin/lora/test";
 const bool  MQTT_RETAIN = false;
 
