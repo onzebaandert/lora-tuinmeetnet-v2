@@ -6,7 +6,7 @@
   Hardware:
     YF-201B VCC        : T-BAT 5V → MOSFET Drain → YF Rood
     YF-201B GND        : GND
-    YF-201B signaalpin : GPIO7 (D5), INPUT_PULLUP  ← ext1 wakeup
+    YF-201B signaalpin : GPIO4 (D2), INPUT_PULLUP  ← gpio wakeup
     MOSFET gate        : GPIO6 (D4) — HIGH = YF aan
     VBAT               : GPIO3 (A1)
 
@@ -42,7 +42,7 @@
 #define SKETCH_TAG "VV_WATERFLOW_SOLAR_V100"
 
 /* ======= PINNEN ======= */
-#define FLOW_PIN    7    // GPIO7 = D5 — YF-201B signaal
+#define FLOW_PIN    4    // GPIO4 = D2 — YF-201B signaal (gpio wakeup vereist GPIO0-5)
 #define MOSFET_PIN  6    // GPIO6 = D4 — HIGH = YF aan
 #define VBAT_PIN    3    // GPIO3 = A1
 
