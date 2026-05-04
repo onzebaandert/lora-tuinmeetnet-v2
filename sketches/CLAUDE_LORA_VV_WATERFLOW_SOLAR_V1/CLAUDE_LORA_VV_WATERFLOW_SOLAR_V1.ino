@@ -54,7 +54,7 @@
 /* ======= METING ======= */
 #define PULSES_PER_LITER    450.0f
 #define MEASURE_WINDOW_MS   3000UL   // teltijd na wakeup
-#define SEND_AFTER_LITERS   10.0f    // tussentijds sturen bij grote sessie
+#define SEND_AFTER_LITERS   0.1f     // TEST: laag voor debug, normaal 10.0
 
 /* ======= ESP-NOW ======= */
 #define ESPNOW_CHANNEL  6
