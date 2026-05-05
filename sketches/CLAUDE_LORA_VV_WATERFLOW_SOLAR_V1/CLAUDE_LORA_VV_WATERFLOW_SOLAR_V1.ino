@@ -257,7 +257,7 @@ static void sleep_dag(uint32_t secs_tot_20h) {
                 secs_tot_20h, secs_tot_20h / 60);
   Serial.flush();
   WiFi.mode(WIFI_OFF);
-  digitalWrite(MOSFET_PIN, HIGH);
+  digitalWrite(MOSFET_PIN, LOW);
   esp_deep_sleep_enable_gpio_wakeup(1ULL << FLOW_PIN, ESP_GPIO_WAKEUP_GPIO_LOW);
   esp_sleep_enable_timer_wakeup((uint64_t)secs_tot_20h * 1000000ULL);
   esp_deep_sleep_start();
@@ -268,7 +268,7 @@ static void sleep_nacht(uint32_t secs_tot_8h) {
                 secs_tot_8h, secs_tot_8h / 60);
   Serial.flush();
   WiFi.mode(WIFI_OFF);
-  digitalWrite(MOSFET_PIN, LOW);
+  digitalWrite(MOSFET_PIN, HIGH);
   esp_sleep_enable_timer_wakeup((uint64_t)secs_tot_8h * 1000000ULL);
   esp_deep_sleep_start();
 }
@@ -284,7 +284,7 @@ void setup() {
   pinMode(FLOW_PIN, INPUT_PULLUP);
   // Bij GPIO wakeup (flow) YF aan houden zodat count_pulses() echt pulsen ziet.
   // In alle andere gevallen pas later aanzetten als nodig.
-  digitalWrite(MOSFET_PIN, (cause == ESP_SLEEP_WAKEUP_GPIO) ? HIGH : LOW);
+  digitalWrite(MOSFET_PIN, (cause == ESP_SLEEP_WAKEUP_GPIO) ? LOW : HIGH);
 
   if (!rtc_init) {
     rtc_session_id = esp_random();
