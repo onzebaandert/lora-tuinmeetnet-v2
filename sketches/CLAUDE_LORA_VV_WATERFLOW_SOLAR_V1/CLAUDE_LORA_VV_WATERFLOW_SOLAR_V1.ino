@@ -278,9 +278,13 @@ void setup() {
   Serial.begin(115200);
   delay(100);
 
+  esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+
   pinMode(MOSFET_PIN, OUTPUT);
   pinMode(FLOW_PIN, INPUT_PULLUP);
-  digitalWrite(MOSFET_PIN, LOW);
+  // Bij GPIO wakeup (flow) YF aan houden zodat count_pulses() echt pulsen ziet.
+  // In alle andere gevallen pas later aanzetten als nodig.
+  digitalWrite(MOSFET_PIN, (cause == ESP_SLEEP_WAKEUP_GPIO) ? HIGH : LOW);
 
   if (!rtc_init) {
     rtc_session_id = esp_random();
@@ -290,8 +294,6 @@ void setup() {
     Serial.printf ("TAG    : %s\n", SKETCH_TAG);
     Serial.println("===========================================");
   }
-
-  esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
   // ── EERSTE BOOT ──────────────────────────────────────────────
   if (cause == ESP_SLEEP_WAKEUP_UNDEFINED) {
