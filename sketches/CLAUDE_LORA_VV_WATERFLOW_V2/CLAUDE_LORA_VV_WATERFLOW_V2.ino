@@ -311,13 +311,15 @@ void setup() {
     digitalWrite(MOSFET_PIN, HIGH);
     delay(50);
 
-    uint8_t zero_count = 0;
+    uint8_t zero_count  = 0;
+    bool    flow_gezien = false;
     while (zero_count < ZERO_WINDOWS_END) {
       uint32_t pulses = count_pulses(MEASURE_WINDOW_MS);
       if (pulses == 0) {
-        zero_count++;
+        if (flow_gezien) zero_count++;  // pas stoppen na eerste puls
       } else {
-        zero_count = 0;
+        flow_gezien = true;
+        zero_count  = 0;
         rtc_pulses_session += pulses;
         rtc_total_L        += pulses / PULSES_PER_LITER;
         Serial.printf("[WF] +%.3fL | sessie=%.2fL | totaal=%.3fL\n",
