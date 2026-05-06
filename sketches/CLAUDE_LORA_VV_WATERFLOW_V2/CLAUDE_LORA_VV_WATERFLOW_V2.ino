@@ -44,7 +44,7 @@
 #define SKETCH_TAG "VV_WATERFLOW_V201"
 
 /* ======= TEST MODE ======================================================= */
-#define TEST_MODE 1              // 1 = testknop, 0 = productie (YF-C01)
+#define TEST_MODE 0              // 1 = testknop, 0 = productie (YF-C01)
 #define TEST_PULSES_PER_WINDOW  225   // nep-pulsen per venster (~0.5L/venster bij 450 p/L)
 #define TEST_ACTIVE_WINDOWS       2   // aantal vensters met pulsen (~1L totaal per druk)
 /* ========================================================================= */
