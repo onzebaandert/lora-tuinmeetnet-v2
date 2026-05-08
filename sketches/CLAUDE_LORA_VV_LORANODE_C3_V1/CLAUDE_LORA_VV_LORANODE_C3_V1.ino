@@ -30,14 +30,6 @@
 #define FILTER_AGG_MAC   1
 static const uint8_t AGG_MAC[6] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 
-/* --- optional XIAO VBAT meting --- */
-#define FEATURE_MESH_VBAT 0
-#define MESH_VBAT_PIN     A1
-#define MESH_VBAT_SAMPLES 12
-#define MESH_VBAT_FACTOR  3.20f
-#define MESH_VBAT_CAL     1.000f
-#define ADC_VREF          3.30f
-#define ADC_MAX           4095.0f
 /* ========================================== */
 
 static void mosfet_init_off() {
@@ -159,22 +151,6 @@ static uint16_t rd_u16_le(const uint8_t *p) {
 
 static bool mac_eq6(const uint8_t a[6], const uint8_t b[6]) {
   return memcmp(a, b, 6) == 0;
-}
-
-static uint16_t read_mesh_vbat_mv() {
-#if FEATURE_MESH_VBAT
-  analogReadResolution(12);
-  uint32_t sum = 0;
-  for (int i = 0; i < MESH_VBAT_SAMPLES; i++) {
-    sum += analogRead(MESH_VBAT_PIN);
-    delay(2);
-  }
-  float raw = (float)sum / (float)MESH_VBAT_SAMPLES;
-  float v = (raw / ADC_MAX) * ADC_VREF * MESH_VBAT_FACTOR * MESH_VBAT_CAL;
-  return (uint16_t)lroundf(v * 1000.0f);
-#else
-  return 0;
-#endif
 }
 
 /* ===== uplink state ===== */
@@ -341,19 +317,17 @@ switch(reason) {
     parse_item22(items + 0 * 22, sid0, seq0, aggTemp, aggHum, aggEc,
                  aggCaseT, aggVbat, aggPh10, aggFlags, aggRsv0);
 
-    uint16_t meshVbat = read_mesh_vbat_mv();
     float meshCaseT = ds_read_temp_c();
 
     char out[240];
     int n = 0;
 
     n += snprintf(out + n, sizeof(out) - n,
-                  "{\"a\":%lu,\"r\":%d,\"av\":%u,\"ac\":%.1f,\"mv\":%u,\"mc\":%.1f,\"s\":[",
+                  "{\"a\":%lu,\"r\":%d,\"av\":%u,\"ac\":%.1f,\"mc\":%.1f,\"s\":[",
                   (unsigned long)agg_seq,
                   uplink_rssi,
                   (unsigned)aggVbat,
                   aggCaseT,
-                  (unsigned)meshVbat,
                   meshCaseT);
 
     bool first = true;
