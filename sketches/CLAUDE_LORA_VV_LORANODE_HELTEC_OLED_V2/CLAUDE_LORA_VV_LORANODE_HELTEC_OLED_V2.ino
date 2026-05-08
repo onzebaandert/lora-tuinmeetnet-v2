@@ -21,6 +21,19 @@ static const int OLED_SDA  = 17;
 static const int OLED_SCL  = 18;
 static const int OLED_RST  = 21;
 
+/* ================= BATTERY ================= */
+static const int  VBAT_PIN     = 1;    // ADC1_CH0, via 100k/100k divider
+static const int  ADC_CTRL_PIN = 37;   // LOW = enable bat meting
+
+float readBattery() {
+  pinMode(ADC_CTRL_PIN, OUTPUT);
+  digitalWrite(ADC_CTRL_PIN, LOW);
+  delay(5);
+  int raw = analogRead(VBAT_PIN);
+  digitalWrite(ADC_CTRL_PIN, HIGH);
+  return raw * (3.3f / 4095.0f) * 2.0f;
+}
+
 /* ================= UART ================= */
 static const int  UART_RX_PIN  = 46;
 static const int  UART_TX_PIN  = -1;
@@ -119,7 +132,12 @@ void setup() {
     while (true) delay(1000);
   }
 
-  oled_show("Wachten op", "UART data...");
+  float batV = readBattery();
+  char batstr[12];
+  snprintf(batstr, sizeof(batstr), "bat %.2fV", batV);
+  Serial.printf("[BAT] %.2fV\n", batV);
+
+  oled_show("Wachten op", "UART data...", batstr);
   Serial.println("[UART] waiting for one line...");
 
   bool ok = readLineFromUart(linebuf, sizeof(linebuf), UART_WAIT_MS);
@@ -144,7 +162,7 @@ void setup() {
       char regel2[24];
       snprintf(regel1, sizeof(regel1), "TX OK  #%lu", (unsigned long)tx_count);
       snprintf(regel2, sizeof(regel2), "%.6s...", linebuf);  // eerste 6 tekens data
-      oled_show(regel1, regel2, "868MHz SF11");
+      oled_show(regel1, regel2, batstr);
       Serial.printf("[LORA] TX OK, totaal=%lu\n", (unsigned long)tx_count);
     } else {
       char fout[24];
