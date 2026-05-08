@@ -6,6 +6,7 @@
 
 //** LORA_VV_LORANODE_HELTEC_V2
 // Toegevoegd: OLED display toont TX status
+// Toegevoegd: batlev (hv) injecteren in JSON payload voor LoRa TX
 
 /* ================= HELTEC WIFI LORA 32 V3 / SX1262 PINS ================= */
 static const int PIN_NSS  = 8;
@@ -22,8 +23,8 @@ static const int OLED_SCL  = 18;
 static const int OLED_RST  = 21;
 
 /* ================= BATTERY ================= */
-static const int  VBAT_PIN     = 1;    // ADC1_CH0, via 100k/100k divider
-static const int  ADC_CTRL_PIN = 37;   // LOW = enable bat meting
+static const int VBAT_PIN     = 1;    // ADC1_CH0, via 100k/100k divider
+static const int ADC_CTRL_PIN = 37;   // LOW = enable bat meting
 
 float readBattery() {
   pinMode(ADC_CTRL_PIN, OUTPUT);
@@ -108,6 +109,17 @@ bool readLineFromUart(char *out, size_t outSize, uint32_t timeoutMs) {
   return false;
 }
 
+// Injecteert "hv":batV voor de afsluitende } van de JSON
+static void inject_batlev(const char* src, char* dst, size_t dstSize, float batV) {
+  size_t len = strlen(src);
+  if (len > 0 && src[len - 1] == '}' && len + 14 < dstSize) {
+    snprintf(dst, dstSize, "%.*s,\"hv\":%.2f}", (int)(len - 1), src, batV);
+  } else {
+    strncpy(dst, src, dstSize - 1);
+    dst[dstSize - 1] = '\0';
+  }
+}
+
 /* ================= SETUP ================= */
 void setup() {
   Serial.begin(115200);
@@ -132,12 +144,7 @@ void setup() {
     while (true) delay(1000);
   }
 
-  float batV = readBattery();
-  char batstr[12];
-  snprintf(batstr, sizeof(batstr), "bat %.2fV", batV);
-  Serial.printf("[BAT] %.2fV\n", batV);
-
-  oled_show("Wachten op", "UART data...", batstr);
+  oled_show("Wachten op", "UART data...");
   Serial.println("[UART] waiting for one line...");
 
   bool ok = readLineFromUart(linebuf, sizeof(linebuf), UART_WAIT_MS);
@@ -150,10 +157,18 @@ void setup() {
 
   Serial.printf("[UART] got len=%u\n", (unsigned)strlen(linebuf));
   Serial.println(linebuf);
+
+  float batV = readBattery();
+  Serial.printf("[BAT] %.2fV\n", batV);
+
+  char txbuf[MAX_LINE + 16];
+  inject_batlev(linebuf, txbuf, sizeof(txbuf), batV);
+  Serial.printf("[OUT] %s\n", txbuf);
+
   oled_show("UART OK", "verzenden...");
 
   for (int i = 1; i <= TX_COPIES; i++) {
-    int state = radio.transmit(linebuf);
+    int state = radio.transmit(txbuf);
     Serial.printf("[LORA] TX %d/%d state=%d\n", i, TX_COPIES, state);
 
     if (state == RADIOLIB_ERR_NONE) {
@@ -161,8 +176,8 @@ void setup() {
       char regel1[24];
       char regel2[24];
       snprintf(regel1, sizeof(regel1), "TX OK  #%lu", (unsigned long)tx_count);
-      snprintf(regel2, sizeof(regel2), "%.6s...", linebuf);  // eerste 6 tekens data
-      oled_show(regel1, regel2, batstr);
+      snprintf(regel2, sizeof(regel2), "%.6s...", txbuf);
+      oled_show(regel1, regel2, "868MHz SF11");
       Serial.printf("[LORA] TX OK, totaal=%lu\n", (unsigned long)tx_count);
     } else {
       char fout[24];
