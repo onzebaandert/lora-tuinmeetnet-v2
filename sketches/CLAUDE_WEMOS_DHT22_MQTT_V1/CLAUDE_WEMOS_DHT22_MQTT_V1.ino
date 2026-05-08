@@ -24,7 +24,7 @@
 #define DHT_PIN      4        // D2
 #define DHT_TYPE     DHT22
 
-static const uint32_t SLEEP_SEC      = 60;
+static const uint32_t SLEEP_SEC      = 25;
 static const char*    MQTT_SERVER    = "192.168.2.13";
 static const int      MQTT_PORT      = 1883;
 static const char*    MQTT_TOPIC     = "tuin/mqtt/dht22";
