@@ -38,7 +38,7 @@ PubSubClient mqttClient(wifiClient);
 
 bool connectWiFi() {
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin(ssid, password);
   uint32_t t = millis();
   while (WiFi.status() != WL_CONNECTED) {
     if (millis() - t > WIFI_TIMEOUT) return false;
