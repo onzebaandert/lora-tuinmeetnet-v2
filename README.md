@@ -4,6 +4,18 @@ Bodemvocht, temperatuur, licht en waterverbruik meten in de tuin via LoRa → MQ
 
 ---
 
+## Ontwerpuitgangspunten
+
+**Low power** is het centrale uitgangspunt. Alle sensor nodes draaien op zonne-energie of een kleine batterij en slapen vrijwel de hele tijd. Een DS3231 RTC wekt ze op de seconde nauwkeurig — geen WiFi, geen polling, minimaal stroomverbruik.
+
+**ESP-NOW in de tuin** als communicatie tussen nodes: geen WiFi-router nodig buiten, geen verbindingsoverhead, lage latency en zuinig. Sensoren sturen hun data rechtstreeks naar de AGG aggregator.
+
+**LoRa naar binnen** voor de lange afstand: bewezen verbinding, werkt door muren en over afstand. Met een Yagi-antenne is het bereik en de robuustheid verder vergroot. De keuze voor LoRa is ook toekomstgericht — een binair pakket past veel data in één message, en met compressie of slimme encoding past er nog meer in. Zo blijft het systeem uitbreidbaar zonder de timing of het stroomverbruik te belasten.
+
+**Één LoRa TX per cyclus**: alle tuindata wordt gebundeld in één 97-byte uplink. De AGG verzamelt alles, de C3 bouwt het pakket, de Heltec zendt één keer. Eenvoudig, voorspelbaar, energiezuinig.
+
+---
+
 ## Architectuur
 
 ```
