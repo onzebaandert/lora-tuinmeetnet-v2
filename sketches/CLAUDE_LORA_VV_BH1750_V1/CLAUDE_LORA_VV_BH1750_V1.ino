@@ -43,7 +43,7 @@ static const uint8_t AGG_MAC[6] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 #define PHASE_SECOND      8
 #define DEV_HOLD_MS       8000UL
 
-#define VBAT_PIN          A2
+#define VBAT_PIN          4    // GPIO4 = D2
 #define VBAT_SAMPLES      12
 #define VBAT_FACTOR       3.20f
 #define VBAT_CAL          0.957f
@@ -168,6 +168,7 @@ static void compute_next_phase_sec(uint8_t hh, uint8_t mm, uint8_t ss,
 /* ===== VBAT ===== */
 static uint16_t read_vbat_mv(){
   analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
   delay(20);
   uint32_t sum = 0;
   for (int i = 0; i < VBAT_SAMPLES; i++) { sum += analogRead(VBAT_PIN); delay(2); }
