@@ -14,6 +14,7 @@
 #include <esp_now.h>
 #include <Wire.h>
 #include "esp_sleep.h"
+#include <Preferences.h>
 
 /* ================= CONFIG ================= */
 #define ESPNOW_WIFI_CHANNEL 6
@@ -198,7 +199,7 @@ static bool soil_have[4] = {false,false,false,false};
 static uint32_t rx_ok = 0, rx_drop = 0, ack_sent = 0;
 
 RTC_DATA_ATTR static uint32_t agg_sid = 0;
-RTC_DATA_ATTR static uint32_t agg_seq = 0;
+static uint32_t agg_seq = 0;
 
 /* ===== RX callback ===== */
 static void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
@@ -280,6 +281,13 @@ void setup() {
 
   if (agg_sid == 0) agg_sid = esp_random();
 
+  Preferences prefs;
+  prefs.begin("agg", false);
+  agg_seq = prefs.getUInt("seq", 0);
+  agg_seq++;
+  prefs.putUInt("seq", agg_seq);
+  prefs.end();
+
   Serial.printf("[AGG] MAC=%s sid=0x%08lX agg_seq=%lu wake=%d\n",
                 WiFi.macAddress().c_str(),
                 (unsigned long)agg_sid,
@@ -316,7 +324,7 @@ void setup() {
   AggUplink97 u{};
   memset(&u, 0, sizeof(u));
   u.agg_sid = agg_sid;
-  u.agg_seq = ++agg_seq;
+  u.agg_seq = agg_seq;
 
   u.items[0].session_id = agg_sid;
   u.items[0].seq        = (uint16_t)(u.agg_seq & 0xFFFF);
