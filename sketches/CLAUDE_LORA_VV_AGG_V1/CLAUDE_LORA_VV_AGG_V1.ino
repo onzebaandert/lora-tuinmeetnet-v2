@@ -32,14 +32,15 @@
 // TTN NODE MAC (unicast)  <-- UPDATED
 static const uint8_t MESH_MAC[6] = {0xB0,0xA6,0x04,0x05,0xD4,0x48};//TTN NODE
 
-// known soil nodes  (slot 0=SOIL1, 1=SOIL2, 2=FLOW)
+// known soil nodes  (slot 0=SOIL1, 1=SOIL2, 2=FLOW, 3=BH1750)
 // Na het flashen van LORA_VV_WATERFLOW_V1: lees MAC uit seriële output
 // "[WF] MAC=XX:XX:XX:XX:XX:XX" en vul in bij FLOW hieronder.
-static const char *SOIL_IDS[3] = {"SOIL1","SOIL2","FLOW"};
-static const uint8_t SOIL_MACS[3][6] = {
+static const char *SOIL_IDS[4] = {"SOIL1","SOIL2","FLOW","BH1750"};
+static const uint8_t SOIL_MACS[4][6] = {
   {0xB0,0xA6,0x04,0x04,0xC0,0x98}, // SOIL1
   {0xB0,0xA6,0x04,0x04,0xF2,0x6C}, // SOIL2
-  {0x80,0xF1,0xB2,0x64,0x48,0xDC}  // FLOW (waterflow XIAO - update MAC na flashen!)
+  {0x80,0xF1,0xB2,0x64,0x48,0xDC}, // FLOW (waterflow XIAO - update MAC na flashen!)
+  {0xB0,0xA6,0x04,0x06,0xC3,0x9C}  // BH1750
 };
 
 // VBAT
@@ -92,10 +93,10 @@ struct __attribute__((packed)) AggUplink97 {
   uint32_t agg_sid;
   uint32_t agg_seq;
   uint8_t  count;
-  Soil22   items[4];  // 0=self, 1..3 soils
+  Soil22   items[5];  // 0=self, 1..4 soils (SOIL1, SOIL2, FLOW, BH1750)
 };
 #pragma pack(pop)
-static_assert(sizeof(AggUplink97) == 97, "AggUplink97 size");
+static_assert(sizeof(AggUplink97) == 119, "AggUplink97 size");
 
 /* ===== RTC ===== */
 static const uint8_t DS3231_ADDR = 0x68;
@@ -192,8 +193,8 @@ static uint16_t read_vbat_mv() {
 }
 
 /* ===== runtime ===== */
-static Soil22 soil_last[3];
-static bool soil_have[3] = {false,false,false};
+static Soil22 soil_last[4];
+static bool soil_have[4] = {false,false,false,false};
 static uint32_t rx_ok = 0, rx_drop = 0, ack_sent = 0;
 
 RTC_DATA_ATTR static uint32_t agg_sid = 0;
@@ -208,7 +209,7 @@ static void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int le
   if (p.magic != 0xA1) { rx_drop++; return; }
 
   int idx = -1;
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     if (mac_eq(info->src_addr, SOIL_MACS[i])) { idx = i; break; }
   }
   if (idx < 0) { rx_drop++; return; }
@@ -269,7 +270,7 @@ void setup() {
                 self_vbat / 1000.0f, (unsigned)self_vbat, self_caseT);
 
   memset(soil_last, 0, sizeof(soil_last));
-  soil_have[0] = soil_have[1] = soil_have[2] = false;
+  soil_have[0] = soil_have[1] = soil_have[2] = soil_have[3] = false;
   rx_ok = rx_drop = ack_sent = 0;
 
   WiFi.mode(WIFI_STA);
@@ -290,7 +291,7 @@ void setup() {
   } else {
     esp_now_register_recv_cb(on_recv);
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
       esp_now_peer_info_t p{};
       memcpy(p.peer_addr, SOIL_MACS[i], 6);
       p.channel = ESPNOW_WIFI_CHANNEL;
@@ -308,9 +309,9 @@ void setup() {
   uint32_t t0 = millis();
   while (millis() - t0 < LISTEN_MS) delay(5);
 
-  Serial.printf("[AGG] Listen done. rx_ok=%lu rx_drop=%lu ack=%lu have1=%d have2=%d have3=%d\n",
+  Serial.printf("[AGG] Listen done. rx_ok=%lu rx_drop=%lu ack=%lu have1=%d have2=%d have3=%d have4=%d\n",
                 (unsigned long)rx_ok, (unsigned long)rx_drop, (unsigned long)ack_sent,
-                soil_have[0]?1:0, soil_have[1]?1:0, soil_have[2]?1:0);
+                soil_have[0]?1:0, soil_have[1]?1:0, soil_have[2]?1:0, soil_have[3]?1:0);
 
   AggUplink97 u{};
   memset(&u, 0, sizeof(u));
@@ -325,7 +326,7 @@ void setup() {
   u.items[0].rsv0       = 0;
 
   uint8_t count = 1;
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     if (soil_have[i]) {
       u.items[count] = soil_last[i];
       // low byte = RSSI (already set), high byte = sensor slot (1-based) for receiver

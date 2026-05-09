@@ -155,7 +155,7 @@ static bool mac_eq6(const uint8_t a[6], const uint8_t b[6]) {
 
 /* ===== uplink state ===== */
 static volatile bool got_uplink = false;
-static uint8_t uplink_buf[97];
+static uint8_t uplink_buf[119];
 static int uplink_rssi = 0;
 
 /*
@@ -199,8 +199,8 @@ void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
   int rssi = 0;
   if (info->rx_ctrl) rssi = info->rx_ctrl->rssi;
 
-  if (len == 97 && !got_uplink) {
-    memcpy(uplink_buf, data, 97);
+  if (len == 119 && !got_uplink) {
+    memcpy(uplink_buf, data, 119);
     uplink_rssi = rssi;
     got_uplink = true;
   }
@@ -319,7 +319,7 @@ switch(reason) {
 
     float meshCaseT = ds_read_temp_c();
 
-    char out[240];
+    char out[300];
     int n = 0;
 
     n += snprintf(out + n, sizeof(out) - n,
@@ -333,8 +333,13 @@ switch(reason) {
     bool first = true;
     uint16_t flow_ec = 0;
     bool have_flow = false;
+    uint16_t bh_lux = 0;
+    float bh_caseT = 0;
+    uint16_t bh_vbat = 0;
+    int8_t bh_rssi = 0;
+    bool have_bh = false;
 
-    for (uint8_t si = 1; si < count && si < 4; si++) {
+    for (uint8_t si = 1; si < count && si < 5; si++) {
       uint32_t sid;
       uint16_t seq, ph10;
       float t, h, caseT;
@@ -342,14 +347,15 @@ switch(reason) {
 
       parse_item22(items + si * 22, sid, seq, t, h, ec, caseT, vbat, ph10, flags, rsv0);
       int8_t  soil_rssi   = (int8_t)(rsv0 & 0xFF);
-      uint8_t sensor_slot = (rsv0 >> 8) & 0xFF;  // 1=SOIL1, 2=SOIL2, 3=FLOW (set by AGG)
+      uint8_t sensor_slot = (rsv0 >> 8) & 0xFF;  // 1=SOIL1, 2=SOIL2, 3=FLOW, 4=BH1750
 
       if (sensor_slot == 1) {
-        // SOIL1: [t, h, ec, caseT, vbat, rssi]
+        // SOIL1: [t, h, ec/10, caseT, vbat, rssi, ph]
         n += snprintf(out + n, sizeof(out) - n,
-                      "%s[%.1f,%.1f,%u,%.1f,%u,%d]",
+                      "%s[%.1f,%.1f,%.1f,%.1f,%u,%d,%.1f]",
                       first ? "" : ",",
-                      t, h, (unsigned)ec, caseT, (unsigned)vbat, (int)soil_rssi);
+                      t, h, ec / 10.0f, caseT, (unsigned)vbat, (int)soil_rssi, ph10 / 10.0f);
+        first = false;
       } else if (sensor_slot == 3) {
         // FLOW: [flowRate, totalLiters, vbat, rssi]
         float flowRate    = h / 10.0f;
@@ -360,22 +366,37 @@ switch(reason) {
                       "%s[%.1f,%.3f,%u,%d]",
                       first ? "" : ",",
                       flowRate, totalLiters, (unsigned)vbat, (int)soil_rssi);
+        first = false;
+      } else if (sensor_slot == 4) {
+        // BH1750: verzamel data, niet in "s" array
+        bh_lux   = ec;
+        bh_caseT = caseT;
+        bh_vbat  = vbat;
+        bh_rssi  = soil_rssi;
+        have_bh  = true;
+        continue;
       } else {
         // SOIL2: [t, h, caseT, vbat, rssi]
         n += snprintf(out + n, sizeof(out) - n,
                       "%s[%.1f,%.1f,%.1f,%u,%d]",
                       first ? "" : ",",
                       t, h, caseT, (unsigned)vbat, (int)soil_rssi);
+        first = false;
       }
 
-      first = false;
-      if (n > (int)sizeof(out) - 48) break;
+      if (n > (int)sizeof(out) - 60) break;
     }
 
     if (have_flow)
-      n += snprintf(out + n, sizeof(out) - n, "],\"wf\":%u}", (unsigned)flow_ec);
+      n += snprintf(out + n, sizeof(out) - n, "],\"wf\":%u", (unsigned)flow_ec);
     else
-      n += snprintf(out + n, sizeof(out) - n, "]}");
+      n += snprintf(out + n, sizeof(out) - n, "]");
+
+    if (have_bh)
+      n += snprintf(out + n, sizeof(out) - n, ",\"bh\":[%u,%.1f,%u,%d]",
+                    (unsigned)bh_lux, bh_caseT, (unsigned)bh_vbat, (int)bh_rssi);
+
+    n += snprintf(out + n, sizeof(out) - n, "}");
     out[sizeof(out) - 1] = '\0';
 
     Serial.printf("[OUT] %s\n", out);
