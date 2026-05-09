@@ -9,7 +9,7 @@ import requests
 
 GRAFANA_URL = "http://192.168.2.13:3000"
 GRAFANA_API_KEY = "VULL_IN"  # <-- jouw Grafana API key hier
-BUCKET = "tuinsensoren"
+BUCKET = "tuinsensoren_v2"
 
 HEADERS = {
     "Authorization": f"Bearer {GRAFANA_API_KEY}",
@@ -138,11 +138,11 @@ def build_dashboard(ds_uid):
     y += 1
 
     panels.append(
-        ts_panel(pid, "Waterverbruik totaal (L)", 0, y, 12, 6,
+        ts_panel(pid, "Waterverbruik totaal (L)", 0, y, 8, 8,
                  [make_target("A", "wf1-totalliters", ds_uid)], ds_uid)
     )
     pid += 1
-    y += 6
+    y += 8
 
     # ── ROW 4: BH1750 ─────────────────────────────────────────────────────────
     panels.append(row_panel(pid, "BH1750 Lichtmeter", y))
