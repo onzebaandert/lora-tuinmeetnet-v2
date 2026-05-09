@@ -32,7 +32,7 @@
 #define ESPNOW_WIFI_CHANNEL   6
 static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 
-#define FLOW_PIN              7        // GPIO7 = D5, YF-201B signaalpin
+#define FLOW_PIN              5        // GPIO5 = D3, YF-C01 signaalpin
 #define PULSES_PER_LITER      450.0f   // YF-201B: F(Hz) = 7.5 * Q(L/min) → 450 p/L
 
 #define FLOW_INTERVAL_MS      5000UL   // flow rate berekening interval
