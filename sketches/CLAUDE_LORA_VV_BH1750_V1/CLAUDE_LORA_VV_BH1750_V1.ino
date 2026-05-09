@@ -43,7 +43,7 @@ static const uint8_t AGG_MAC[6] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 #define PHASE_SECOND      8
 #define DEV_HOLD_MS       8000UL
 
-#define VBAT_PIN          A1
+#define VBAT_PIN          A2
 #define VBAT_SAMPLES      12
 #define VBAT_FACTOR       3.20f
 #define VBAT_CAL          0.957f
