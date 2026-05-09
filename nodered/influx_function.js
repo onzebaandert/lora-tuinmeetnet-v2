@@ -11,7 +11,7 @@ if (d.wf !== undefined) {
 if (Array.isArray(d.s)) {
   d.s.forEach(function(a) {
     if (a.length === 7) {
-      lines.push('soil1 temperatuur=' + a[0] + ',vochtigheid=' + a[1] + ',ec=' + a[2] + ',temp_case=' + a[3] + ',vbat=' + a[4] + 'i,rssi=' + a[5] + ',ph=' + a[6] + ' ' + ts);
+      lines.push('soil1 temperatuur=' + a[0] + ',vochtigheid=' + a[1] + ',ec=' + Math.round(a[2]) + 'i,temp_case=' + a[3] + ',vbat=' + a[4] + 'i,rssi=' + a[5] + ',ph=' + a[6] + ' ' + ts);
     } else if (a.length === 5) {
       lines.push('soil2 temperatuur=' + a[0] + ',vochtigheid=' + a[1] + ',temp_case=' + a[2] + ',vbat=' + a[3] + 'i,rssi=' + a[4] + ' ' + ts);
     } else if (a.length === 4) {
