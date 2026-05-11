@@ -30,16 +30,18 @@ static const float VBAT_RATIO  = 4.9f; // ingebouwde deler: 390k/100k → (390+1
 static const float VBAT_CAL    = 1.0f; // kalibratie factor (bijsturen indien nodig)
 
 uint32_t read_vbat_mv() {
+  analogSetPinAttenuation(VBAT_PIN, ADC_11db); // bereik 0–3.3V
   pinMode(ADC_CTRL_PIN, OUTPUT);
   digitalWrite(ADC_CTRL_PIN, LOW);
   delay(5);
   uint32_t sum = 0;
   for (int i = 0; i < VBAT_N_SAMPLES; i++) {
-    sum += analogReadMilliVolts(VBAT_PIN);
+    sum += analogRead(VBAT_PIN);
     delay(2);
   }
   digitalWrite(ADC_CTRL_PIN, HIGH);
-  float avg_mv = (float)sum / VBAT_N_SAMPLES;
+  float avg_raw = (float)sum / VBAT_N_SAMPLES;
+  float avg_mv  = avg_raw * (3300.0f / 4095.0f); // 12-bit → mV bij 11dB
   return (uint32_t)(avg_mv * VBAT_RATIO * VBAT_CAL + 0.5f);
 }
 
@@ -121,7 +123,7 @@ bool readLineFromUart(char *out, size_t outSize, uint32_t timeoutMs) {
 static void inject_batlev(const char* src, char* dst, size_t dstSize, uint32_t vbat_mv) {
   size_t len = strlen(src);
   if (len > 0 && src[len - 1] == '}' && len + 28 < dstSize) {
-    snprintf(dst, dstSize, "%.*s,\"lnHelTuin-vbat\":%lu}", (int)(len - 1), src, (unsigned long)vbat_mv);
+    snprintf(dst, dstSize, "%.*s,\"lnHelTuin-vbat\":%u}", (int)(len - 1), src, (unsigned)vbat_mv);
   } else {
     strncpy(dst, src, dstSize - 1);
     dst[dstSize - 1] = '\0';
@@ -167,7 +169,7 @@ void setup() {
   Serial.println(linebuf);
 
   uint32_t vbat_mv = read_vbat_mv();
-  Serial.printf("[BAT] %u mV (%.2f V)\n", vbat_mv, vbat_mv / 1000.0f);
+  Serial.printf("[BAT] %u mV (%.2fV)\n", (unsigned)vbat_mv, vbat_mv / 1000.0f);
 
   char txbuf[MAX_LINE + 32];
   inject_batlev(linebuf, txbuf, sizeof(txbuf), vbat_mv);
