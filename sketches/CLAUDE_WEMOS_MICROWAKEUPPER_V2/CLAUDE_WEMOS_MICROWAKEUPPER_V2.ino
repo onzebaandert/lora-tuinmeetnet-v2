@@ -67,7 +67,7 @@ bool connectMQTT() {
   uint32_t t = millis();
   while (!mqttClient.connected()) {
     if (millis() - t > MQTT_TIMEOUT) return false;
-    mqttClient.connect(MQTT_CLIENT);
+    mqttClient.connect(MQTT_CLIENT, mqtt_user, mqtt_pass);
     if (!mqttClient.connected()) delay(500);
   }
   return true;
