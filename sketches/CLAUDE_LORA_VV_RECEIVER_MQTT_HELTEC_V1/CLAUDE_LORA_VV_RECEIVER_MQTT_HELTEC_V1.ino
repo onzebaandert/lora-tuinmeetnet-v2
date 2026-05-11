@@ -45,18 +45,11 @@ static const uint8_t LORA_CR   = 5;
 static const uint8_t LORA_SYNC = 0x12;
 static const int8_t  LORA_PWR  = 14;
 
-// ---------- TBAT SPANNING METING (externe 0-25V sensor op GPIO4) ----------
+// ---------- TBAT SPANNING METING ----------
 #define TBAT_PIN        4
 #define VBAT_SAMPLES    8
 static const float TBAT_RATIO = 5.0f;   // sensor verhouding 5:1 (0-25V module)
 static const float TBAT_CAL   = 1.0f;   // kalibratie factor (bijsturen indien nodig)
-
-// ---------- VBAT BATTERIJSPANNING (ingebouwd op GPIO1) ----------
-#define VBAT_PIN        1
-#define VBAT_CTRL_PIN   37              // LOW = ADC ingeschakeld, HIGH = uit (power saving)
-#define VBAT_N_SAMPLES  12
-static const float VBAT_RATIO = 4.9f;  // ingebouwde deler: 390k/100k → (390+100)/100
-static const float VBAT_CAL   = 1.0f;  // kalibratie factor (bijsturen indien nodig)
 
 // ---------- TIMING ----------
 #define MQTT_KEEPALIVE_S   120
@@ -195,7 +188,7 @@ bool setupLoRa() {
 }
 
 // =====================================================
-// TBAT (externe sensor GPIO4)
+// TBAT
 // =====================================================
 uint32_t read_tbat_mv() {
   uint32_t sum = 0;
@@ -205,22 +198,6 @@ uint32_t read_tbat_mv() {
   }
   float avg_mv = (float)sum / VBAT_SAMPLES;
   return (uint32_t)(avg_mv * TBAT_RATIO * TBAT_CAL + 0.5f);
-}
-
-// =====================================================
-// VBAT (ingebouwde batterijmeting GPIO1)
-// =====================================================
-uint32_t read_vbat_mv() {
-  digitalWrite(VBAT_CTRL_PIN, LOW);    // ADC inschakelen
-  delay(5);
-  uint32_t sum = 0;
-  for (int i = 0; i < VBAT_N_SAMPLES; i++) {
-    sum += analogReadMilliVolts(VBAT_PIN);
-    delay(2);
-  }
-  digitalWrite(VBAT_CTRL_PIN, HIGH);   // ADC uitschakelen (power saving)
-  float avg_mv = (float)sum / VBAT_N_SAMPLES;
-  return (uint32_t)(avg_mv * VBAT_RATIO * VBAT_CAL + 0.5f);
 }
 
 // =====================================================
@@ -249,10 +226,6 @@ void setup() {
   pinMode(36, OUTPUT);
   digitalWrite(36, LOW);
   delay(100);
-
-  // VBAT_CTRL standaard uit (HIGH = ADC afgekoppeld)
-  pinMode(VBAT_CTRL_PIN, OUTPUT);
-  digitalWrite(VBAT_CTRL_PIN, HIGH);
 
   // OLED opstarten
   pinMode(OLED_RST, OUTPUT);
@@ -303,22 +276,18 @@ void loop() {
       Serial.printf("RSSI: %.1f  SNR: %.1f\n", last_rssi, last_snr);
 
       uint32_t tbat_mv = read_tbat_mv();
-      uint32_t vbat_mv = read_vbat_mv();
       Serial.printf("TBAT: %u mV (%.2f V)\n", tbat_mv, tbat_mv / 1000.0f);
-      Serial.printf("VBAT: %u mV (%.2f V)\n", vbat_mv, vbat_mv / 1000.0f);
 
       String payload;
       if (received.startsWith("{") && received.endsWith("}")) {
         payload = received;
         payload.remove(payload.length() - 1);
         payload += ",\"lr\":" + String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
-                   ",\"lnHelTuin-tbat\":" + String(tbat_mv) +
-                   ",\"lnHelTuin-vbat\":" + String(vbat_mv) + "}";
+                   ",\"lnHelTuin-tbat\":" + String(tbat_mv) + "}";
       } else {
         payload = "{\"raw\":\"" + escapeJson(received) + "\",\"lr\":" +
                   String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
-                  ",\"lnHelTuin-tbat\":" + String(tbat_mv) +
-                  ",\"lnHelTuin-vbat\":" + String(vbat_mv) + "}";
+                  ",\"lnHelTuin-tbat\":" + String(tbat_mv) + "}";
       }
 
       if (!ensure_mqtt()) {
