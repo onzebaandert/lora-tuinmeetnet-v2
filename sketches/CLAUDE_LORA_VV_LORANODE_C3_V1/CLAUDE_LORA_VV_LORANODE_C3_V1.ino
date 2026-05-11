@@ -30,6 +30,21 @@
 #define FILTER_AGG_MAC   1
 static const uint8_t AGG_MAC[6] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 
+/* ================= VBAT ================= */
+#define VBAT_PIN_C3    3
+#define VBAT_N_SAMPLES 12
+static const float VBAT_RATIO = 1.478f; // gemeten: 2700mV op ADC bij 3990mV batterij
+static const float VBAT_CAL   = 1.0f;   // kalibratie factor
+
+static uint32_t read_vbat_mv() {
+  uint32_t sum = 0;
+  for (int i = 0; i < VBAT_N_SAMPLES; i++) {
+    sum += analogReadMilliVolts(VBAT_PIN_C3);
+  }
+  float avg_mv = (float)sum / VBAT_N_SAMPLES;
+  return (uint32_t)(avg_mv * VBAT_RATIO * VBAT_CAL + 0.5f);
+}
+
 /* ========================================== */
 
 static void mosfet_init_off() {
@@ -318,8 +333,10 @@ switch(reason) {
                  aggCaseT, aggVbat, aggPh10, aggFlags, aggRsv0);
 
     float meshCaseT = ds_read_temp_c();
+    uint32_t vbat_mv = read_vbat_mv();
+    Serial.printf("[VBAT] %u mV\n", (unsigned)vbat_mv);
 
-    char out[300];
+    char out[330];
     int n = 0;
 
     n += snprintf(out + n, sizeof(out) - n,
@@ -396,7 +413,7 @@ switch(reason) {
       n += snprintf(out + n, sizeof(out) - n, ",\"bh\":[%u,%.1f,%u,%d]",
                     (unsigned)bh_lux, bh_caseT, (unsigned)bh_vbat, (int)bh_rssi);
 
-    n += snprintf(out + n, sizeof(out) - n, "}");
+    n += snprintf(out + n, sizeof(out) - n, ",\"lnC3-vbat\":%u}", (unsigned)vbat_mv);
     out[sizeof(out) - 1] = '\0';
 
     Serial.printf("[OUT] %s\n", out);
