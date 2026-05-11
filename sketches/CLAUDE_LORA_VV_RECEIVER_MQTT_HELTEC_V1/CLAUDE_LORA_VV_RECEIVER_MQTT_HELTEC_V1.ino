@@ -276,18 +276,22 @@ void loop() {
       Serial.printf("RSSI: %.1f  SNR: %.1f\n", last_rssi, last_snr);
 
       uint32_t tbat_mv = read_tbat_mv();
+      float    hel_temp = temperatureRead();
       Serial.printf("TBAT: %u mV (%.2f V)\n", tbat_mv, tbat_mv / 1000.0f);
+      Serial.printf("TEMP: %.1f C\n", hel_temp);
 
       String payload;
       if (received.startsWith("{") && received.endsWith("}")) {
         payload = received;
         payload.remove(payload.length() - 1);
         payload += ",\"lr\":" + String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
-                   ",\"lnHelTuin-tbat\":" + String(tbat_mv) + "}";
+                   ",\"lnHelTuin-tbat\":" + String(tbat_mv) +
+                   ",\"hel_temp\":" + String(hel_temp, 1) + "}";
       } else {
         payload = "{\"raw\":\"" + escapeJson(received) + "\",\"lr\":" +
                   String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
-                  ",\"lnHelTuin-tbat\":" + String(tbat_mv) + "}";
+                  ",\"lnHelTuin-tbat\":" + String(tbat_mv) +
+                  ",\"hel_temp\":" + String(hel_temp, 1) + "}";
       }
 
       if (!ensure_mqtt()) {
