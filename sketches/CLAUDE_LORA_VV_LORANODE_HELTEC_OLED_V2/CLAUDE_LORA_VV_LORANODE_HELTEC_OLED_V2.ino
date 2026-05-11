@@ -4,9 +4,9 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 
-//** LORA_VV_LORANODE_HELTEC_V2
-// Toegevoegd: OLED display toont TX status
-// Toegevoegd: batlev (hv) injecteren in JSON payload voor LoRa TX
+//** LORA_VV_LORANODE_HELTEC_V3
+// V2: OLED display, batlev injecteren in JSON payload
+// V3: loop() herhaalt UART→TX cyclus (was eenmalig in setup())
 
 /* ================= HELTEC WIFI LORA 32 V3 / SX1262 PINS ================= */
 static const int PIN_NSS  = 8;
@@ -23,11 +23,11 @@ static const int OLED_SCL  = 18;
 static const int OLED_RST  = 21;
 
 /* ================= BATTERY ================= */
-static const int   VBAT_PIN      = 1;     // ADC1_CH0, ingebouwde spanningsdeler
-static const int   ADC_CTRL_PIN  = 37;    // LOW = ADC ingeschakeld, HIGH = uit
+static const int   VBAT_PIN       = 1;    // ADC1_CH0, ingebouwde spanningsdeler
+static const int   ADC_CTRL_PIN   = 37;   // LOW = ADC ingeschakeld, HIGH = uit
 static const int   VBAT_N_SAMPLES = 8;
-static const float VBAT_RATIO    = 4.9f;  // spanningsdeler factor (pas VBAT_CAL aan om te kalibreren)
-static const float VBAT_CAL      = 1.0f;  // kalibratie factor
+static const float VBAT_RATIO     = 4.9f; // spanningsdeler factor
+static const float VBAT_CAL       = 1.0f; // kalibratie factor
 
 uint32_t read_vbat_mv() {
   pinMode(ADC_CTRL_PIN, OUTPUT);
@@ -58,15 +58,16 @@ static const int8_t  LORA_PWR  = 14;
 
 /* ================= TX BEHAVIOR ================= */
 static const int MAX_LINE     = 240;
-static const int UART_WAIT_MS = 25000;
+static const int UART_WAIT_MS = 35000; // ruimer dan Wemos sleep interval (25s)
 static const int TX_COPIES    = 1;
 static const int TX_GAP_MS    = 4000;
 
 SX1262 radio = new Module(PIN_NSS, PIN_DIO1, PIN_NRST, PIN_BUSY);
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, OLED_SCL, OLED_SDA, OLED_RST);
 
-char linebuf[MAX_LINE];
-static uint32_t tx_count = 0;
+static char     linebuf[MAX_LINE];
+static uint32_t tx_count   = 0;
+static uint32_t miss_count = 0;
 
 /* ================= OLED ================= */
 void oled_show(const char* line1, const char* line2 = "", const char* line3 = "") {
@@ -90,7 +91,6 @@ bool setupLoRa() {
   }
   Serial.printf("[LORA] %.1f MHz BW=%.0f SF=%u CR=4/%u SYNC=0x%02X PWR=%d\n",
                 LORA_FREQ, LORA_BW, LORA_SF, LORA_CR, LORA_SYNC, LORA_PWR);
-  oled_show("LORA OK", "868MHz SF11");
   return true;
 }
 
@@ -117,7 +117,7 @@ bool readLineFromUart(char *out, size_t outSize, uint32_t timeoutMs) {
   return false;
 }
 
-// Injecteert "lnHelTuin-vbat":mv voor de afsluitende } van de JSON
+/* ================= INJECT BATLEV ================= */
 static void inject_batlev(const char* src, char* dst, size_t dstSize, uint32_t vbat_mv) {
   size_t len = strlen(src);
   if (len > 0 && src[len - 1] == '}' && len + 28 < dstSize) {
@@ -133,17 +133,16 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  // OLED opstarten
   pinMode(OLED_RST, OUTPUT);
   digitalWrite(OLED_RST, LOW);
   delay(50);
   digitalWrite(OLED_RST, HIGH);
   Wire.begin(OLED_SDA, OLED_SCL);
   u8g2.begin();
-  oled_show("HELTEC V2", "opstarten...");
+  oled_show("HELTEC V3", "opstarten...");
 
   Serial.println();
-  Serial.println("=== LORA_VV_LORANODE_HELTEC_V2 ===");
+  Serial.println("=== LORA_VV_LORANODE_HELTEC_V3 ===");
   Serial.printf("[UART] RX=%d baud=%ld\n", UART_RX_PIN, UART_BAUD);
 
   Serial1.begin(UART_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
@@ -152,18 +151,26 @@ void setup() {
     while (true) delay(1000);
   }
 
+  oled_show("LORA OK", "868MHz SF11", "wachten...");
+}
+
+/* ================= LOOP ================= */
+void loop() {
   oled_show("Wachten op", "UART data...");
-  Serial.println("[UART] waiting for one line...");
+  Serial.println("[UART] wachten op lijn...");
 
   bool ok = readLineFromUart(linebuf, sizeof(linebuf), UART_WAIT_MS);
 
   if (!ok) {
-    Serial.println("[UART] no line received");
-    oled_show("UART timeout", "geen data");
+    miss_count++;
+    Serial.printf("[UART] timeout (miss=%lu)\n", (unsigned long)miss_count);
+    char regel[24];
+    snprintf(regel, sizeof(regel), "miss=%lu", (unsigned long)miss_count);
+    oled_show("UART timeout", regel);
     return;
   }
 
-  Serial.printf("[UART] got len=%u\n", (unsigned)strlen(linebuf));
+  Serial.printf("[UART] ontvangen len=%u\n", (unsigned)strlen(linebuf));
   Serial.println(linebuf);
 
   uint32_t vbat_mv = read_vbat_mv();
@@ -172,8 +179,6 @@ void setup() {
   char txbuf[MAX_LINE + 32];
   inject_batlev(linebuf, txbuf, sizeof(txbuf), vbat_mv);
   Serial.printf("[OUT] %s\n", txbuf);
-
-  oled_show("UART OK", "verzenden...");
 
   for (int i = 1; i <= TX_COPIES; i++) {
     int state = radio.transmit(txbuf);
@@ -191,15 +196,9 @@ void setup() {
       char fout[24];
       snprintf(fout, sizeof(fout), "TX FAIL code=%d", state);
       oled_show("TX MISLUKT", fout);
+      Serial.printf("[LORA] TX FAIL code=%d\n", state);
     }
 
     if (i < TX_COPIES) delay(TX_GAP_MS);
   }
-
-  Serial.println("[LORA] done");
-}
-
-/* ================= LOOP ================= */
-void loop() {
-  delay(50);
 }
