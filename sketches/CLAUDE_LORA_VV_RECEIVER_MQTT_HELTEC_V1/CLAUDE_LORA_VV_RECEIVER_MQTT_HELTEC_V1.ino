@@ -45,6 +45,12 @@ static const uint8_t LORA_CR   = 5;
 static const uint8_t LORA_SYNC = 0x12;
 static const int8_t  LORA_PWR  = 14;
 
+// ---------- TBAT SPANNING METING ----------
+#define TBAT_PIN        4
+#define VBAT_SAMPLES    8
+static const float TBAT_RATIO = 5.0f;   // sensor verhouding 5:1 (0-25V module)
+static const float TBAT_CAL   = 1.0f;   // kalibratie factor (bijsturen indien nodig)
+
 // ---------- TIMING ----------
 #define MQTT_KEEPALIVE_S   120
 #define OLED_UPDATE_MS     5000UL    // OLED refresh elke 5 seconden
@@ -182,6 +188,19 @@ bool setupLoRa() {
 }
 
 // =====================================================
+// TBAT
+// =====================================================
+uint32_t read_tbat_mv() {
+  uint32_t sum = 0;
+  for (int i = 0; i < VBAT_SAMPLES; i++) {
+    sum += analogReadMilliVolts(TBAT_PIN);
+    delay(2);
+  }
+  float avg_mv = (float)sum / VBAT_SAMPLES;
+  return (uint32_t)(avg_mv * TBAT_RATIO * TBAT_CAL + 0.5f);
+}
+
+// =====================================================
 // HELPERS
 // =====================================================
 String escapeJson(const String& s) {
@@ -256,14 +275,19 @@ void loop() {
       Serial.println(received);
       Serial.printf("RSSI: %.1f  SNR: %.1f\n", last_rssi, last_snr);
 
+      uint32_t tbat_mv = read_tbat_mv();
+      Serial.printf("TBAT: %u mV (%.2f V)\n", tbat_mv, tbat_mv / 1000.0f);
+
       String payload;
       if (received.startsWith("{") && received.endsWith("}")) {
         payload = received;
         payload.remove(payload.length() - 1);
-        payload += ",\"lr\":" + String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) + "}";
+        payload += ",\"lr\":" + String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
+                   ",\"lnHelTuin-tbat\":" + String(tbat_mv) + "}";
       } else {
         payload = "{\"raw\":\"" + escapeJson(received) + "\",\"lr\":" +
-                  String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) + "}";
+                  String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
+                  ",\"lnHelTuin-tbat\":" + String(tbat_mv) + "}";
       }
 
       if (!ensure_mqtt()) {
