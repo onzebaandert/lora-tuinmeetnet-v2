@@ -2,7 +2,7 @@ const d = msg.payload;
 const ts = Date.now() * 1000000;
 const lines = [];
 
-lines.push('systeem agg_seq=' + (d.a||0) + 'i,rssi_lora=' + (d.r||0) + ',vbat_agg=' + (d.av||0) + 'i,temp_agg=' + (d.ac||0) + ',vbat_mesh=' + (d.mv||0) + 'i,temp_mesh=' + (d.mc||0) + ',rssi_heltec=' + (d.lr||0) + ',snr_heltec=' + (d.ls||0) + ' ' + ts);
+lines.push('systeem agg_seq=' + (d.a||0) + 'i,rssi_lora=' + (d.r||0) + ',vbat_agg=' + (d.av||0) + 'i,temp_agg=' + (d.ac||0) + ',vbat_mesh=' + (d.mv||0) + 'i,temp_mesh=' + (d.mc||0) + ',rssi_heltec=' + (d.lr||0) + ',snr_heltec=' + (d.ls||0) + ',lnHel_vbat=' + (d['lnHelTuin-vbat']||0) + 'i,lnC3_vbat=' + (d['lnC3-vbat']||0) + 'i ' + ts);
 
 if (d.wf !== undefined) {
   lines.push('waterflow pulsen=' + d.wf + 'i ' + ts);
