@@ -23,26 +23,16 @@ static const int OLED_SCL  = 18;
 static const int OLED_RST  = 21;
 
 /* ================= BATTERY ================= */
-static const int VBAT_PIN      = 1;     // ADC1_CH0, ingebouwde spanningsdeler
-static const int ADC_CTRL_PIN  = 37;    // LOW = ADC ingeschakeld, HIGH = uit
-#define VBAT_N_SAMPLES  12
-static const float VBAT_RATIO  = 4.9f; // ingebouwde deler: 390k/100k → (390+100)/100
-static const float VBAT_CAL    = 1.0f; // kalibratie factor (bijsturen indien nodig)
+static const int VBAT_PIN     = 1;    // ADC1_CH0, via 100k/100k divider
+static const int ADC_CTRL_PIN = 37;   // LOW = enable bat meting
 
-uint32_t read_vbat_mv() {
-  analogSetPinAttenuation(VBAT_PIN, ADC_11db); // bereik 0–3.3V
+float readBattery() {
   pinMode(ADC_CTRL_PIN, OUTPUT);
   digitalWrite(ADC_CTRL_PIN, LOW);
   delay(5);
-  uint32_t sum = 0;
-  for (int i = 0; i < VBAT_N_SAMPLES; i++) {
-    sum += analogRead(VBAT_PIN);
-    delay(2);
-  }
+  int raw = analogRead(VBAT_PIN);
   digitalWrite(ADC_CTRL_PIN, HIGH);
-  float avg_raw = (float)sum / VBAT_N_SAMPLES;
-  float avg_mv  = avg_raw * (3300.0f / 4095.0f); // 12-bit → mV bij 11dB
-  return (uint32_t)(avg_mv * VBAT_RATIO * VBAT_CAL + 0.5f);
+  return raw * (3.3f / 4095.0f) * 2.0f;
 }
 
 /* ================= UART ================= */
@@ -119,11 +109,11 @@ bool readLineFromUart(char *out, size_t outSize, uint32_t timeoutMs) {
   return false;
 }
 
-// Injecteert "lnHelTuin-vbat":vbat_mv voor de afsluitende } van de JSON
-static void inject_batlev(const char* src, char* dst, size_t dstSize, uint32_t vbat_mv) {
+// Injecteert "hv":batV voor de afsluitende } van de JSON
+static void inject_batlev(const char* src, char* dst, size_t dstSize, float batV) {
   size_t len = strlen(src);
-  if (len > 0 && src[len - 1] == '}' && len + 28 < dstSize) {
-    snprintf(dst, dstSize, "%.*s,\"lnHelTuin-vbat\":%u}", (int)(len - 1), src, (unsigned)vbat_mv);
+  if (len > 0 && src[len - 1] == '}' && len + 14 < dstSize) {
+    snprintf(dst, dstSize, "%.*s,\"hv\":%.2f}", (int)(len - 1), src, batV);
   } else {
     strncpy(dst, src, dstSize - 1);
     dst[dstSize - 1] = '\0';
@@ -168,11 +158,11 @@ void setup() {
   Serial.printf("[UART] got len=%u\n", (unsigned)strlen(linebuf));
   Serial.println(linebuf);
 
-  uint32_t vbat_mv = read_vbat_mv();
-  Serial.printf("[BAT] %u mV (%.2fV)\n", (unsigned)vbat_mv, vbat_mv / 1000.0f);
+  float batV = readBattery();
+  Serial.printf("[BAT] %.2fV\n", batV);
 
-  char txbuf[MAX_LINE + 32];
-  inject_batlev(linebuf, txbuf, sizeof(txbuf), vbat_mv);
+  char txbuf[MAX_LINE + 16];
+  inject_batlev(linebuf, txbuf, sizeof(txbuf), batV);
   Serial.printf("[OUT] %s\n", txbuf);
 
   oled_show("UART OK", "verzenden...");
