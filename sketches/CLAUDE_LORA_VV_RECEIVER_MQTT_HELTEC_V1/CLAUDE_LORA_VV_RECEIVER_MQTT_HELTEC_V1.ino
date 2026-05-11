@@ -45,11 +45,17 @@ static const uint8_t LORA_CR   = 5;
 static const uint8_t LORA_SYNC = 0x12;
 static const int8_t  LORA_PWR  = 14;
 
-// ---------- TBAT SPANNING METING ----------
+// ---------- TBAT EXTERNE SPANNING METING (0-25V module op GPIO4) ----------
 #define TBAT_PIN        4
 #define VBAT_SAMPLES    8
 static const float TBAT_RATIO = 5.0f;   // sensor verhouding 5:1 (0-25V module)
 static const float TBAT_CAL   = 1.0f;   // kalibratie factor (bijsturen indien nodig)
+
+// ---------- EIGEN BATTERIJ (JST op achterkant, Heltec V3 ingebouwde deler) ----------
+#define VBAT_PIN        1     // ADC1_CH0
+#define VBAT_CTRL_PIN   37    // LOW = ADC ingeschakeld
+static const float VBAT_RATIO = 4.9f;  // 100k/390k spanningsdeler op het board
+static const float VBAT_CAL   = 1.0f;  // kalibratie factor
 
 // ---------- TIMING ----------
 #define MQTT_KEEPALIVE_S   120
@@ -188,7 +194,7 @@ bool setupLoRa() {
 }
 
 // =====================================================
-// TBAT
+// TBAT — externe 0-25V sensor op GPIO4
 // =====================================================
 uint32_t read_tbat_mv() {
   uint32_t sum = 0;
@@ -198,6 +204,23 @@ uint32_t read_tbat_mv() {
   }
   float avg_mv = (float)sum / VBAT_SAMPLES;
   return (uint32_t)(avg_mv * TBAT_RATIO * TBAT_CAL + 0.5f);
+}
+
+// =====================================================
+// VBAT — eigen JST batterij via ingebouwde Heltec deler
+// =====================================================
+uint32_t read_vbat_mv() {
+  pinMode(VBAT_CTRL_PIN, OUTPUT);
+  digitalWrite(VBAT_CTRL_PIN, LOW);
+  delay(5);
+  int32_t sum = 0;
+  for (int i = 0; i < VBAT_SAMPLES; i++) {
+    sum += analogRead(VBAT_PIN);
+  }
+  digitalWrite(VBAT_CTRL_PIN, HIGH);
+  float avg_raw = (float)sum / VBAT_SAMPLES;
+  float mv = avg_raw * (3300.0f / 4095.0f) * VBAT_RATIO * VBAT_CAL;
+  return (uint32_t)(mv + 0.5f);
 }
 
 // =====================================================
@@ -275,9 +298,11 @@ void loop() {
       Serial.println(received);
       Serial.printf("RSSI: %.1f  SNR: %.1f\n", last_rssi, last_snr);
 
-      uint32_t tbat_mv = read_tbat_mv();
+      uint32_t tbat_mv  = read_tbat_mv();
+      uint32_t vbat_mv  = read_vbat_mv();
       float    hel_temp = temperatureRead();
       Serial.printf("TBAT: %u mV (%.2f V)\n", tbat_mv, tbat_mv / 1000.0f);
+      Serial.printf("VBAT: %u mV (%.2f V)\n", vbat_mv, vbat_mv / 1000.0f);
       Serial.printf("TEMP: %.1f C\n", hel_temp);
 
       String payload;
@@ -286,11 +311,13 @@ void loop() {
         payload.remove(payload.length() - 1);
         payload += ",\"lr\":" + String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
                    ",\"lnHelTuin-tbat\":" + String(tbat_mv) +
+                   ",\"lnHelMqtt-vbat\":" + String(vbat_mv) +
                    ",\"hel_temp\":" + String(hel_temp, 1) + "}";
       } else {
         payload = "{\"raw\":\"" + escapeJson(received) + "\",\"lr\":" +
                   String(last_rssi, 1) + ",\"ls\":" + String(last_snr, 1) +
                   ",\"lnHelTuin-tbat\":" + String(tbat_mv) +
+                  ",\"lnHelMqtt-vbat\":" + String(vbat_mv) +
                   ",\"hel_temp\":" + String(hel_temp, 1) + "}";
       }
 
