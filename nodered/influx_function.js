@@ -2,7 +2,7 @@ const d = msg.payload;
 const ts = Date.now() * 1000000;
 const lines = [];
 
-lines.push('systeem agg_seq=' + (d.a||0) + 'i,rssi_lora=' + (d.r||0) + ',vbat_agg=' + Math.round((d.av||0) * 0.9694) + 'i,temp_agg=' + (d.ac||0) + ',rssi_heltec=' + (d.lr||0) + ',snr_heltec=' + (d.ls||0) + ',lnHel_vbat=' + (d['lnHelTuin-vbat']||0) + 'i,lnC3_vbat=' + (d['lnC3-vbat']||0) + 'i,mqtt_vbat=' + (d['lnHelTuin-tbat']||0) + 'i ' + ts);
+lines.push('systeem agg_seq=' + (d.a||0) + 'i,rssi_lora=' + (d.r||0) + ',vbat_agg=' + Math.round((d.av||0) * 0.9694) + 'i,temp_agg=' + (d.ac||0) + ',rssi_heltec=' + (d.lr||0) + ',snr_heltec=' + (d.ls||0) + ',lnHel_vbat=' + Math.round((d['lnHelTuin-vbat']||0) * 1.1818) + 'i,lnC3_vbat=' + Math.round((d['lnC3-vbat']||0) * 1.0260) + 'i,mqtt_vbat=' + (d['lnHelTuin-tbat']||0) + 'i ' + ts);
 
 if (d.wf !== undefined) {
   lines.push('waterflow pulsen=' + d.wf + 'i ' + ts);
