@@ -201,4 +201,5 @@ void loop() {
 
     if (i < TX_COPIES) delay(TX_GAP_MS);
   }
+  delay(3000);  // resultaat leesbaar houden op OLED
 }
