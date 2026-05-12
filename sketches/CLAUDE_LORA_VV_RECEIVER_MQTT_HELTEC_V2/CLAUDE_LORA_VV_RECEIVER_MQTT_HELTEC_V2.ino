@@ -270,6 +270,7 @@ void setup() {
   client.setCallback(mqtt_callback);
   client.setKeepAlive(MQTT_KEEPALIVE_S);
   client.setSocketTimeout(10);
+  client.setBufferSize(512);
   reconnect_mqtt();
 
   if (!setupLoRa()) {
