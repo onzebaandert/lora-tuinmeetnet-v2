@@ -208,11 +208,12 @@ void publish_status() {
 
   char payload[128];
   snprintf(payload, sizeof(payload),
-    "{\"uptime\":%lu,\"rx_total\":%lu,\"rx_mqtt_ok\":%lu,\"rssi_lora\":%.1f,\"wifi_rssi\":%d}",
+    "{\"uptime\":%lu,\"rx_total\":%lu,\"rx_mqtt_ok\":%lu,\"rssi_lora\":%.1f,\"snr_lora\":%.1f,\"wifi_rssi\":%d}",
     (unsigned long)(millis() / 1000),
     (unsigned long)rx_total,
     (unsigned long)rx_mqtt_ok,
     last_rssi,
+    last_snr,
     (int)WiFi.RSSI()
   );
 
