@@ -4,23 +4,24 @@
 #include <RadioLib.h>
 #include <U8g2lib.h>
 #include <Wire.h>
-#include <DHT.h>
+#include <Adafruit_SI7021.h>
 #include "credentials.h"
 
 // =====================================================
 // LORA_VV_RECEIVER_MQTT_HELTEC_V3
 //
 // Nieuw t.o.v. V2:
-//   - DHT22 op GPIO 5 → publiceert elke 30s naar
-//     tuin/mqtt/dht22 (zelfde format als Wemos V1)
+//   - SI7021 op I2C (SDA=17, SCL=18, zelfde als OLED)
+//     publiceert elke 30s naar tuin/mqtt/dht22
 //     {"temp":22.4,"hum":58.1}
 //   - Wemos D1 mini keepalive niet meer nodig
-//   - OLED toont DHT temp/hum als 4e regel
+//   - OLED toont SI7021 temp/hum als 4e regel
 //
-// Hardware aansluiting DHT22:
-//   GPIO 5  ──── DHT22 DATA (met 10kΩ pull-up naar 3V3)
-//   3V3     ──── DHT22 VCC
-//   GND     ──── DHT22 GND
+// Hardware aansluiting SI7021:
+//   GPIO 5 ──── SI7021 SDA
+//   GPIO 6 ──── SI7021 SCL
+//   3V3    ──── SI7021 VCC
+//   GND    ──── SI7021 GND
 // =====================================================
 
 // ---------- MQTT ----------
@@ -59,28 +60,26 @@ static const int8_t  LORA_PWR  = 14;
 static const float TBAT_RATIO = 5.0f;
 static const float TBAT_CAL   = 1.0f;
 
-// ---------- DHT22 ----------
-#define DHT_PIN  5
-DHT dht(DHT_PIN, DHT22);
-
 // ---------- TIMING ----------
 #define MQTT_KEEPALIVE_S  120
 #define OLED_UPDATE_MS    5000UL
 #define STATUS_PUB_MS     30000UL
 
 // ---------- STATE ----------
-WiFiClient   espClient;
-PubSubClient client(espClient);
-SX1262       radio = new Module(PIN_NSS, PIN_DIO1, PIN_NRST, PIN_BUSY);
+WiFiClient       espClient;
+PubSubClient     client(espClient);
+SX1262           radio = new Module(PIN_NSS, PIN_DIO1, PIN_NRST, PIN_BUSY);
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, OLED_SCL, OLED_SDA, OLED_RST);
+Adafruit_SI7021  si7021;
+TwoWire          Wire2 = TwoWire(1);  // tweede I2C bus voor SI7021
 
 static volatile bool pkt_received  = false;
 static uint32_t rx_total           = 0;
 static uint32_t rx_mqtt_ok         = 0;
 static float    last_rssi          = 0;
 static float    last_snr           = 0;
-static float    last_dht_temp      = NAN;
-static float    last_dht_hum       = NAN;
+static float    last_si_temp       = NAN;
+static float    last_si_hum        = NAN;
 static uint32_t last_oled_ms       = 0;
 static uint32_t last_status_pub_ms = 0;
 
@@ -101,10 +100,10 @@ void oled_update(const char* status) {
   snprintf(regel2, sizeof(regel2), "RX:%-4lu MQTT:%-4lu", (unsigned long)rx_total, (unsigned long)rx_mqtt_ok);
   snprintf(regel3, sizeof(regel3), "RSSI:%.0f SNR:%.0f", last_rssi, last_snr);
 
-  if (!isnan(last_dht_temp))
-    snprintf(regel4, sizeof(regel4), "%.1fC  %.0f%%", last_dht_temp, last_dht_hum);
+  if (!isnan(last_si_temp))
+    snprintf(regel4, sizeof(regel4), "%.1fC  %.0f%%", last_si_temp, last_si_hum);
   else
-    snprintf(regel4, sizeof(regel4), "DHT: --");
+    snprintf(regel4, sizeof(regel4), "SI7021: --");
 
   u8g2.clearBuffer();
   u8g2.setFont(u8g2_font_6x13_tf);
@@ -177,27 +176,27 @@ bool ensure_mqtt() {
 }
 
 // =====================================================
-// DHT22
+// SI7021
 // =====================================================
-void publish_dht() {
-  float temp = dht.readTemperature();
-  float hum  = dht.readHumidity();
+void publish_si7021() {
+  float temp = si7021.readTemperature();
+  float hum  = si7021.readHumidity();
 
   if (isnan(temp) || isnan(hum)) {
-    Serial.println("[DHT22] leesfout — overgeslagen");
+    Serial.println("[SI7021] leesfout — overgeslagen");
     return;
   }
 
-  last_dht_temp = temp;
-  last_dht_hum  = hum;
-  Serial.printf("[DHT22] %.1f°C  %.1f%%\n", temp, hum);
+  last_si_temp = temp;
+  last_si_hum  = hum;
+  Serial.printf("[SI7021] %.1f°C  %.1f%%\n", temp, hum);
 
   if (!ensure_mqtt()) return;
 
   char payload[48];
   snprintf(payload, sizeof(payload), "{\"temp\":%.1f,\"hum\":%.1f}", temp, hum);
   bool ok = client.publish(mqtt_dht_topic, payload, false);
-  Serial.printf("[DHT22] MQTT %s → %s\n", ok ? "OK" : "FAIL", payload);
+  Serial.printf("[SI7021] MQTT %s → %s\n", ok ? "OK" : "FAIL", payload);
 }
 
 // =====================================================
@@ -289,7 +288,7 @@ void setup() {
   digitalWrite(36, LOW);
   delay(100);
 
-  // OLED opstarten
+  // OLED + I2C opstarten
   pinMode(OLED_RST, OUTPUT);
   digitalWrite(OLED_RST, LOW);
   delay(50);
@@ -298,9 +297,14 @@ void setup() {
   u8g2.begin();
   oled_update("Opstarten...");
 
-  // DHT22 opstarten (2s opwarmtijd)
-  dht.begin();
-  delay(2000);
+  // SI7021 opstarten op GPIO 5 (SDA) en GPIO 6 (SCL)
+  Wire2.begin(5, 6);
+  if (!si7021.begin(&Wire2)) {
+    Serial.println("[SI7021] niet gevonden!");
+    oled_update("SI7021 FAIL");
+  } else {
+    Serial.println("[SI7021] OK");
+  }
 
   setup_wifi();
 
@@ -357,9 +361,9 @@ void loop() {
       } else {
         payload = "{\"raw\":\"" + escapeJson(received) +
                   "\",\"lr\":"             + String(last_rssi, 1) +
-                  ",\"ls\":"             + String(last_snr, 1) +
-                  ",\"lnHelTuin-tbat\":" + String(tbat_mv) +
-                  ",\"hel_temp\":"       + String(hel_temp, 1) + "}";
+                  ",\"ls\":"              + String(last_snr, 1) +
+                  ",\"lnHelTuin-tbat\":"  + String(tbat_mv) +
+                  ",\"hel_temp\":"        + String(hel_temp, 1) + "}";
       }
 
       if (!ensure_mqtt()) {
@@ -386,10 +390,10 @@ void loop() {
     oled_update("Luisteren...");
   }
 
-  // --- Status + DHT22 periodiek publiceren ---
+  // --- SI7021 + status periodiek publiceren ---
   if (millis() - last_status_pub_ms >= STATUS_PUB_MS) {
     last_status_pub_ms = millis();
-    publish_dht();
+    publish_si7021();
     publish_status();
   }
 
