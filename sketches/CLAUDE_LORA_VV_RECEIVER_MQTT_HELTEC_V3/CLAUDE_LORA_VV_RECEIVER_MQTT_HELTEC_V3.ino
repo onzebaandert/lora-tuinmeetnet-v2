@@ -4,7 +4,6 @@
 #include <RadioLib.h>
 #include <U8g2lib.h>
 #include <Wire.h>
-#include <Adafruit_Si7021.h>
 #include "credentials.h"
 
 // =====================================================
@@ -70,8 +69,8 @@ WiFiClient       espClient;
 PubSubClient     client(espClient);
 SX1262           radio = new Module(PIN_NSS, PIN_DIO1, PIN_NRST, PIN_BUSY);
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, OLED_SCL, OLED_SDA, OLED_RST);
-Adafruit_Si7021  si7021;
 TwoWire          Wire2 = TwoWire(1);  // tweede I2C bus voor SI7021
+#define SI7021_ADDR 0x40
 
 static volatile bool pkt_received  = false;
 static uint32_t rx_total           = 0;
@@ -176,13 +175,36 @@ bool ensure_mqtt() {
 }
 
 // =====================================================
-// SI7021
+// SI7021 — directe I2C, geen library
 // =====================================================
-void publish_si7021() {
-  float temp = si7021.readTemperature();
-  float hum  = si7021.readHumidity();
+bool si7021_read(float &temp, float &hum) {
+  // lees vochtigheid
+  Wire2.beginTransmission(SI7021_ADDR);
+  Wire2.write(0xF5);  // meting starten (no hold)
+  Wire2.endTransmission();
+  delay(25);
+  Wire2.requestFrom((uint8_t)SI7021_ADDR, (uint8_t)2);
+  if (Wire2.available() < 2) return false;
+  uint16_t raw_hum = (Wire2.read() << 8) | Wire2.read();
+  hum = ((125.0f * raw_hum) / 65536.0f) - 6.0f;
+  hum = constrain(hum, 0.0f, 100.0f);
 
-  if (isnan(temp) || isnan(hum)) {
+  // lees temperatuur
+  Wire2.beginTransmission(SI7021_ADDR);
+  Wire2.write(0xF3);  // meting starten (no hold)
+  Wire2.endTransmission();
+  delay(25);
+  Wire2.requestFrom((uint8_t)SI7021_ADDR, (uint8_t)2);
+  if (Wire2.available() < 2) return false;
+  uint16_t raw_temp = (Wire2.read() << 8) | Wire2.read();
+  temp = ((175.72f * raw_temp) / 65536.0f) - 46.85f;
+
+  return true;
+}
+
+void publish_si7021() {
+  float temp, hum;
+  if (!si7021_read(temp, hum)) {
     Serial.println("[SI7021] leesfout — overgeslagen");
     return;
   }
@@ -299,12 +321,7 @@ void setup() {
 
   // SI7021 opstarten op GPIO 5 (SDA) en GPIO 6 (SCL)
   Wire2.begin(5, 6);
-  if (!si7021.begin(&Wire2)) {
-    Serial.println("[SI7021] niet gevonden!");
-    oled_update("SI7021 FAIL");
-  } else {
-    Serial.println("[SI7021] OK");
-  }
+  Serial.println("[SI7021] I2C gestart op GPIO 5/6");
 
   setup_wifi();
 
