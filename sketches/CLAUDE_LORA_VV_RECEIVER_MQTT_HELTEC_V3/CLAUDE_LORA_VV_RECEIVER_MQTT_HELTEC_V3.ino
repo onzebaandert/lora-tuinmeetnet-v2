@@ -4,7 +4,7 @@
 #include <RadioLib.h>
 #include <U8g2lib.h>
 #include <Wire.h>
-#include <Adafruit_SI7021.h>
+#include <Adafruit_Si7021.h>
 #include "credentials.h"
 
 // =====================================================
@@ -70,7 +70,7 @@ WiFiClient       espClient;
 PubSubClient     client(espClient);
 SX1262           radio = new Module(PIN_NSS, PIN_DIO1, PIN_NRST, PIN_BUSY);
 U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, OLED_SCL, OLED_SDA, OLED_RST);
-Adafruit_SI7021  si7021;
+Adafruit_Si7021  si7021;
 TwoWire          Wire2 = TwoWire(1);  // tweede I2C bus voor SI7021
 
 static volatile bool pkt_received  = false;
