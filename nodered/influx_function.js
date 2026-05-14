@@ -25,6 +25,6 @@ if (d.bh !== undefined) {
 }
 
 msg.payload = lines.join(String.fromCharCode(10));
-msg.headers = {'Authorization': 'Token yP9QgxCGpRP39-ZHPjPdUfRuKcJtDnNfp_PsIW5Btrl9kr75fBfqxWBuj6NXorAs_Z9wbEeTfKxYITsCbZRBWA==', 'Content-Type': 'text/plain'};
-msg.url = 'http://localhost:8086/api/v2/write?org=tuinmeetnet&bucket=tuinsensoren_v3&precision=ns';
+msg.headers = {'Authorization': 'Token x84Y0jPGr42X1QCA9rIYFU9GXXuHzMNJBMUdv9v9xPr_baeVKm-WUIB6FIHRW6eRTNfWM-8obb_eJ8J7UT3e2Q==', 'Content-Type': 'text/plain'};
+msg.url = 'http://localhost:8086/api/v2/write?org=tuinmeetnet&bucket=tuinsensoren_v4&precision=ns';
 return msg;
