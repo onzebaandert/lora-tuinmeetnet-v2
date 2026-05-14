@@ -18,7 +18,7 @@
 //   - OLED toont temp/hum als 4e regel
 //
 // Hardware aansluiting AM2301:
-//   GPIO 7  ──── AM2301 DATA
+//   GPIO 3  ──── AM2301 DATA
 //   3V3     ──── AM2301 VCC
 //   GND     ──── AM2301 GND
 // =====================================================
@@ -60,7 +60,7 @@ static const float TBAT_RATIO = 5.0f;
 static const float TBAT_CAL   = 1.0f;
 
 // ---------- AM2301 ----------
-#define DHT_PIN  7
+#define DHT_PIN  3
 DHT dht(DHT_PIN, DHT21);
 
 // ---------- TIMING ----------
