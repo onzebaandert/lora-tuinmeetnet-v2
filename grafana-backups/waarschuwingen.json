@@ -30,6 +30,7 @@
               "mode": "line+area"
             }
           },
+          "displayName": "${__field.labels._field}",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -51,7 +52,7 @@
               }
             ]
           },
-          "unit": "mV"
+          "unit": ""
         },
         "overrides": [
           {
@@ -63,7 +64,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
+                  "fixedColor": "#73BF69",
                   "mode": "fixed"
                 }
               }
@@ -78,7 +79,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "green",
+                  "fixedColor": "#5794F2",
                   "mode": "fixed"
                 }
               }
@@ -87,13 +88,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "wf"
+              "options": "flow"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "light-blue",
+                  "fixedColor": "#37872D",
                   "mode": "fixed"
                 }
               }
@@ -108,7 +109,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "orange",
+                  "fixedColor": "#FF9830",
                   "mode": "fixed"
                 }
               }
@@ -123,7 +124,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "purple",
+                  "fixedColor": "#F2495C",
                   "mode": "fixed"
                 }
               }
@@ -132,7 +133,7 @@
         ]
       },
       "gridPos": {
-        "h": 10,
+        "h": 13,
         "w": 24,
         "x": 0,
         "y": 1
@@ -143,7 +144,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -160,7 +161,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil1\")\n  |> yield(name: \"soil1\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil1\")",
           "refId": "A"
         },
         {
@@ -169,7 +170,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil2\")\n  |> yield(name: \"soil2\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil2\")",
           "refId": "B"
         },
         {
@@ -178,7 +179,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"flow\" and r._field == \"vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"wf\")\n  |> yield(name: \"wf\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"flow\" and r._field == \"vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"flow\")",
           "refId": "C"
         },
         {
@@ -187,7 +188,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"vbat_agg\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"agg\")\n  |> yield(name: \"agg\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"vbat_agg\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"agg\")",
           "refId": "D"
         },
         {
@@ -196,7 +197,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"lnC3_vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"lnC3\")\n  |> yield(name: \"lnC3\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"lnC3_vbat\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"lnC3\")",
           "refId": "E"
         }
       ],
@@ -231,6 +232,7 @@
               "mode": "line+area"
             }
           },
+          "displayName": "${__field.labels._field}",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -248,7 +250,7 @@
               }
             ]
           },
-          "unit": "celsius"
+          "unit": ""
         },
         "overrides": [
           {
@@ -260,7 +262,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
+                  "fixedColor": "#73BF69",
                   "mode": "fixed"
                 }
               }
@@ -275,7 +277,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "green",
+                  "fixedColor": "#5794F2",
                   "mode": "fixed"
                 }
               }
@@ -290,7 +292,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "orange",
+                  "fixedColor": "#FF9830",
                   "mode": "fixed"
                 }
               }
@@ -305,7 +307,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "red",
+                  "fixedColor": "#F2495C",
                   "mode": "fixed"
                 }
               }
@@ -314,7 +316,7 @@
         ]
       },
       "gridPos": {
-        "h": 10,
+        "h": 12,
         "w": 24,
         "x": 0,
         "y": 12
@@ -325,7 +327,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -342,7 +344,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"temp_case\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil1\")\n  |> yield(name: \"soil1\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"temp_case\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil1\")",
           "refId": "A"
         },
         {
@@ -351,7 +353,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"temp_case\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil2\")\n  |> yield(name: \"soil2\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"temp_case\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil2\")",
           "refId": "B"
         },
         {
@@ -360,7 +362,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"temp_agg\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"agg\")\n  |> yield(name: \"agg\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"temp_agg\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"agg\")",
           "refId": "C"
         },
         {
@@ -369,7 +371,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"temp_mesh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"lnC3\")\n  |> yield(name: \"lnC3\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"temp_mesh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"lnC3\")",
           "refId": "D"
         }
       ],
@@ -390,5 +392,5 @@
   "timezone": "browser",
   "title": "Waarschuwingen",
   "uid": "waarschuwingen",
-  "version": 2
+  "version": 17
 }

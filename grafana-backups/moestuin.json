@@ -27,12 +27,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "celsius"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "soil1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 1
@@ -43,7 +60,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -61,7 +78,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"temperatuur\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil1-soiltemp\")\n  |> yield(name: \"soil1-soiltemp\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"temperatuur\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil1\")",
           "refId": "A"
         }
       ],
@@ -80,12 +97,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "humidity"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "soil1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
         "y": 1
@@ -96,7 +130,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -114,7 +148,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"vochtigheid\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil1-soilhum\")\n  |> yield(name: \"soil1-soilhum\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"vochtigheid\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil1\")",
           "refId": "A"
         }
       ],
@@ -133,12 +167,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "µS/cm"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "soil1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#73BF69",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 9
@@ -149,7 +200,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -167,7 +218,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"ec\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil1-soilec\")\n  |> yield(name: \"soil1-soilec\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"ec\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil1\")",
           "refId": "A"
         }
       ],
@@ -186,6 +237,7 @@
             "lineWidth": 2,
             "spanNulls": true
           },
+          "displayName": "${__field.labels._field}",
           "unit": ""
         },
         "overrides": [
@@ -222,7 +274,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 12,
         "y": 9
@@ -233,7 +285,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -251,7 +303,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"ph\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"pH raw\")\n  |> yield(name: \"pH raw\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"ph\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"ph\")",
           "refId": "A"
         },
         {
@@ -260,7 +312,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"ph\")\n  |> timedMovingAverage(every: v.windowPeriod, period: 10m)\n  |> set(key: \"_field\", value: \"pH moving avg 10m\")\n  |> yield(name: \"pH moving avg 10m\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"ph\")\n  |> timedMovingAverage(every: v.windowPeriod, period: 10m)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"ph (avg)\")",
           "refId": "B"
         }
       ],
@@ -292,12 +344,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "celsius"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "soil2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 18
@@ -308,7 +377,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -326,7 +395,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"temperatuur\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil2-soiltemp\")\n  |> yield(name: \"soil2-soiltemp\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"temperatuur\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil2\")",
           "refId": "A"
         }
       ],
@@ -345,12 +414,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "humidity"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "soil2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#5794F2",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
         "y": 18
@@ -361,7 +447,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -379,7 +465,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"vochtigheid\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil2-soilhum\")\n  |> yield(name: \"soil2-soilhum\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"vochtigheid\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil2\")",
           "refId": "A"
         }
       ],
@@ -411,19 +497,20 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "lux"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "bh1750-lux"
+              "options": "bh1750"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "yellow",
+                  "fixedColor": "#B877D9",
                   "mode": "fixed"
                 }
               }
@@ -432,13 +519,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "sensorstation-lux"
+              "options": "stnst"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "orange",
+                  "fixedColor": "#FADE2A",
                   "mode": "fixed"
                 }
               }
@@ -447,7 +534,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 24,
         "x": 0,
         "y": 27
@@ -458,7 +545,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -476,7 +563,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"bh1750\" and r._field == \"lux\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"bh1750-lux\")\n  |> yield(name: \"bh1750-lux\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"bh1750\" and r._field == \"lux\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"bh1750\")",
           "refId": "A"
         },
         {
@@ -485,7 +572,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"lux\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"sensorstation-lux\")\n  |> yield(name: \"sensorstation-lux\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"lux\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"stnst\")",
           "refId": "B"
         }
       ],
@@ -517,12 +604,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "celsius"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "stnst"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FADE2A",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 36
@@ -533,7 +637,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -551,7 +655,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"temperatuur\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"stnst-temp\")\n  |> yield(name: \"stnst-temp\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"temperatuur\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"stnst\")",
           "refId": "A"
         }
       ],
@@ -570,12 +674,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "humidity"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "stnst"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#FADE2A",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
         "y": 36
@@ -586,7 +707,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -604,7 +725,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"vochtigheid\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"stnst-hum\")\n  |> yield(name: \"stnst-hum\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"vochtigheid\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"stnst\")",
           "refId": "A"
         }
       ],
@@ -636,12 +757,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "litre"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "flow"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#37872D",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 24,
         "x": 0,
         "y": 45
@@ -652,7 +790,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -670,7 +808,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"flow\" and r._field == \"total_liters\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"wf1-totalliters\")\n  |> yield(name: \"wf1-totalliters\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"flow\" and r._field == \"total_liters\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"flow\")",
           "refId": "A"
         }
       ],
@@ -691,5 +829,5 @@
   "timezone": "browser",
   "title": "Moestuin",
   "uid": "moestuin",
-  "version": 2
+  "version": 17
 }

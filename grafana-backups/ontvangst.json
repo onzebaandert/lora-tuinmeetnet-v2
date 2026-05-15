@@ -27,7 +27,8 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "dBm"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
         "overrides": [
           {
@@ -39,7 +40,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
+                  "fixedColor": "#73BF69",
                   "mode": "fixed"
                 }
               }
@@ -54,7 +55,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "green",
+                  "fixedColor": "#5794F2",
                   "mode": "fixed"
                 }
               }
@@ -69,7 +70,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "orange",
+                  "fixedColor": "#B877D9",
                   "mode": "fixed"
                 }
               }
@@ -84,7 +85,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "yellow",
+                  "fixedColor": "#FADE2A",
                   "mode": "fixed"
                 }
               }
@@ -93,7 +94,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 12,
         "w": 24,
         "x": 0,
         "y": 1
@@ -104,7 +105,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -122,7 +123,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil1\")\n  |> yield(name: \"soil1\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil1\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil1\")",
           "refId": "A"
         },
         {
@@ -131,7 +132,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"soil2\")\n  |> yield(name: \"soil2\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"soil2\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"soil2\")",
           "refId": "B"
         },
         {
@@ -140,7 +141,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"bh1750\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"bh1750\")\n  |> yield(name: \"bh1750\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"bh1750\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"bh1750\")",
           "refId": "C"
         },
         {
@@ -149,7 +150,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"stnst\")\n  |> yield(name: \"stnst\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"sensorstation\" and r._field == \"rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"stnst\")",
           "refId": "D"
         }
       ],
@@ -181,19 +182,20 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "dBm"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "LoRa RSSI (receiver)"
+              "options": "receiver"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
+                  "fixedColor": "#1F60C4",
                   "mode": "fixed"
                 }
               }
@@ -202,13 +204,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "RSSI Heltec"
+              "options": "heltec"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "purple",
+                  "fixedColor": "#C4162A",
                   "mode": "fixed"
                 }
               }
@@ -217,7 +219,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 0,
         "y": 10
@@ -228,7 +230,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -246,7 +248,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"receiver\" and r._field == \"rssi_lora\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"LoRa RSSI (receiver)\")\n  |> yield(name: \"LoRa RSSI (receiver)\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"receiver\" and r._field == \"rssi_lora\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\")\")\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"receiver\")",
           "refId": "A"
         },
         {
@@ -255,7 +257,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"rssi_heltec\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"RSSI Heltec\")\n  |> yield(name: \"RSSI Heltec\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"rssi_heltec\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"heltec\")",
           "refId": "B"
         }
       ],
@@ -274,12 +276,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "dB"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "heltec"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#C4162A",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
         "y": 10
@@ -290,7 +309,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -308,7 +327,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"snr_heltec\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"LoRa SNR\")\n  |> yield(name: \"LoRa SNR\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"systeem\" and r._field == \"snr_heltec\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"heltec\")",
           "refId": "A"
         }
       ],
@@ -340,12 +359,29 @@
             "lineWidth": 2,
             "spanNulls": true
           },
-          "unit": "dBm"
+          "displayName": "${__field.labels._field}",
+          "unit": ""
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "receiver"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1F60C4",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 19
@@ -356,7 +392,7 @@
           "calcs": [
             "min",
             "max",
-            "lastNotNull"
+            "last"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -374,7 +410,7 @@
             "uid": "afkx36iy17i0wd"
           },
           "hide": false,
-          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"receiver\" and r._field == \"wifi_rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> set(key: \"_field\", value: \"WiFi RSSI\")\n  |> yield(name: \"WiFi RSSI\")",
+          "query": "from(bucket: \"tuinsensoren_v4\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"receiver\" and r._field == \"wifi_rssi\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> drop(columns: [\"_measurement\"])\n  |> set(key: \"_field\", value: \"receiver\")",
           "refId": "A"
         }
       ],
@@ -395,5 +431,5 @@
   "timezone": "browser",
   "title": "Ontvangst",
   "uid": "ontvangst",
-  "version": 2
+  "version": 18
 }
