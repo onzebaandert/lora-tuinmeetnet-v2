@@ -49,10 +49,9 @@ static const uint8_t AGG_MAC[6] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 #define INTERVAL_MINUTES  5
 #define MINUTE_PHASE      0
 #define PHASE_SECOND      24   // wake op :24 (SOIL1=:08, SOIL2=:16, BH1750=:08)
-#define DEV_HOLD_MS       0UL  // 0 voor test
+#define DEV_HOLD_MS       8000UL
 
-// TEST: zet op 0 voor productie (dan DS3231 timing)
-#define TEST_SLEEP_SEC    30
+#define SLEEP_SEC         30
 
 // Batterij – pas VBAT_RATIO aan na kalibratie
 // Verbind bat+ via 100K/100K spanningsdeler met GPIO1
@@ -317,26 +316,11 @@ void setup(){
     }
   }
 
-#if TEST_SLEEP_SEC > 0
-  Serial.printf("[TEST] timer sleep %d sec\n", TEST_SLEEP_SEC);
-  esp_sleep_enable_timer_wakeup((uint64_t)TEST_SLEEP_SEC * 1000000ULL);
+  Serial.printf("[SLEEP] %d sec\n", SLEEP_SEC);
+  esp_sleep_enable_timer_wakeup((uint64_t)SLEEP_SEC * 1000000ULL);
   WiFi.mode(WIFI_OFF);
   Serial.flush();
   esp_deep_sleep_start();
-#else
-  uint8_t hh, mm, ss;
-  if (ds_read_hms(hh, mm, ss)) {
-    uint8_t th, tm, ts;
-    compute_next_phase_sec(hh, mm, ss, th, tm, ts);
-    Serial.printf("[RTC] Now %02u:%02u:%02u -> Alarm %02u:%02u:%02u (delivered=%d)\n",
-                  hh, mm, ss, th, tm, ts, delivered?1:0);
-    ds_set_alarm1_hms_ignore_date(th, tm, ts);
-  } else {
-    Serial.println("[RTC] DS3231 read failed -> timer fallback");
-    esp_sleep_enable_timer_wakeup((uint64_t)INTERVAL_MINUTES * 60ULL * 1000000ULL);
-  }
-  go_sleep_gpio_c3();
-#endif
 }
 
 void loop(){}
