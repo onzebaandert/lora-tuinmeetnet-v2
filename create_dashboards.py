@@ -7,7 +7,7 @@ import requests
 GRAFANA = "http://192.168.2.13:3000"
 API_KEY = "GRAFANA_API_KEY_HIER_INVULLEN"
 DS_UID = "afkx36iy17i0wd"
-BUCKET = "tuinsensoren_v3"
+BUCKET = "tuinsensoren_v4"
 
 HDR = {
     "Authorization": f"Bearer {API_KEY}",
