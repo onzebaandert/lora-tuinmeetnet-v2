@@ -1,17 +1,16 @@
 /*
   SKETCH : LORA_VV_SENSORSTATION_V1
   DEVICE : ESP32-C3 Super Mini
-  ROLE   : Licht + temp + vochtigheid + casetemp + batlev naar AGG via ESP-NOW
-  SENSOR : BH1750 (I2C 0x23) + SHT3x (I2C 0x44) + SI7021 (I2C 0x40) + LilyGo T-BAT
+  ROLE   : Licht + temp + vochtigheid + batlev naar AGG via ESP-NOW
+  SENSOR : BH1750 (I2C 0x23) + SHT3x (I2C 0x44) + LilyGo T-BAT
 
   Hardware aansluitingen:
-    Super Mini GPIO3 (SDA) ──── BH1750 SDA  +  SHT3x SDA  +  SI7021 SDA
-    Super Mini GPIO4 (SCL) ──── BH1750 SCL  +  SHT3x SCL  +  SI7021 SCL
+    Super Mini GPIO3 (SDA) ──── BH1750 SDA  +  SHT3x SDA
+    Super Mini GPIO4 (SCL) ──── BH1750 SCL  +  SHT3x SCL
     Super Mini GPIO1       ──── T-BAT VBAT spanningsdeler uitgang
                                 (100K van bat+ naar GPIO1, 100K van GPIO1 naar GND)
     BH1750 ADDR            ──── GND  (adres 0x23)
     SHT3x  ADDR            ──── GND  (adres 0x44)
-    SI7021                 ──── adres 0x40 (vast)
 
   Packet layout (Soil22 struct, id=5):
     t_x10    = SHT3x temperatuur × 10  (°C)
@@ -20,7 +19,7 @@
     case_x10 = BME280 temperatuur × 10 (°C, behuizing)
     vbat_mv  = batterij in mV
     ph_x10   = BME280 luchtdruk × 10   (hPa, bijv. 10132 = 1013.2 hPa)
-    flags    = 0x0001 BH1750 OK | 0x0002 SHT3x OK | 0x0004 SI7021 OK
+    flags    = 0x0001 BH1750 OK | 0x0002 SHT3x OK
 
   Libraries:
     - BH1750         door Christopher Laws
@@ -36,7 +35,6 @@
 #include "esp_sleep.h"
 #include <BH1750.h>
 #include <Adafruit_SHT31.h>
-#include <Adafruit_Si7021.h>
 
 #define SKETCH_TAG "VV_SENSORSTATION_V1"
 
@@ -163,11 +161,6 @@ void setup(){
   if (!sht_ok || isnan(sht_temp)) { sht_ok = false; sht_temp = 0.0f; sht_hum = 0.0f; }
   Serial.printf("[SHT3x]  ok=%d T=%.1f H=%.1f\n", sht_ok ? 1 : 0, sht_temp, sht_hum);
 
-  // SI7021 (casetemp)
-  Adafruit_Si7021 si7021;
-  bool si_ok = si7021.begin();
-  float si_temp = si_ok ? si7021.readTemperature() : 0.0f;
-  Serial.printf("[SI7021] ok=%d caseT=%.1f\n", si_ok ? 1 : 0, si_temp);
 
   uint16_t vbat_mv = read_vbat_mv();
   Serial.printf("[VBAT]   %.2fV  (VBAT_RATIO=%.2f)\n", vbat_mv / 1000.0f, VBAT_RATIO);
@@ -200,7 +193,6 @@ void setup(){
     uint16_t flags = 0;
     if (bh_ok)  flags |= 0x0001;
     if (sht_ok) flags |= 0x0002;
-    if (si_ok)  flags |= 0x0004;
 
     SoilPacket pkt{};
     pkt.magic        = 0xA1;
@@ -210,7 +202,7 @@ void setup(){
     pkt.s.t_x10      = (int16_t)lroundf(sht_temp * 10.0f);
     pkt.s.h_x10      = (uint16_t)lroundf(sht_hum  * 10.0f);
     pkt.s.ec_raw     = lux_u16;
-    pkt.s.case_x10   = (int16_t)lroundf(si_temp * 10.0f);
+    pkt.s.case_x10   = 0;
     pkt.s.vbat_mv    = vbat_mv;
     pkt.s.ph_x10     = 0;
     pkt.s.flags      = flags;
@@ -221,9 +213,9 @@ void setup(){
       bool tx_ok  = (txe == ESP_OK);
       bool ack_ok = tx_ok ? wait_ack(pkt.s.session_id, pkt.s.seq) : false;
 
-      Serial.printf("[TX] seq=%u attempt=%d tx=%d ack=%d lux=%u T=%.1f H=%.1f caseT=%.1f vbat=%.2fV flags=0x%04X\n",
+      Serial.printf("[TX] seq=%u attempt=%d tx=%d ack=%d lux=%u T=%.1f H=%.1f vbat=%.2fV flags=0x%04X\n",
                     (unsigned)pkt.s.seq, attempt, tx_ok?1:0, ack_ok?1:0,
-                    (unsigned)lux_u16, sht_temp, sht_hum, si_temp,
+                    (unsigned)lux_u16, sht_temp, sht_hum,
                     vbat_mv/1000.0f, (unsigned)flags);
 
       if (ack_ok) { delivered = true; break; }
