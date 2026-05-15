@@ -170,7 +170,7 @@ static bool mac_eq6(const uint8_t a[6], const uint8_t b[6]) {
 
 /* ===== uplink state ===== */
 static volatile bool got_uplink = false;
-static uint8_t uplink_buf[119];
+static uint8_t uplink_buf[141];
 static int uplink_rssi = 0;
 
 /*
@@ -214,8 +214,8 @@ void on_recv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
   int rssi = 0;
   if (info->rx_ctrl) rssi = info->rx_ctrl->rssi;
 
-  if (len == 119 && !got_uplink) {
-    memcpy(uplink_buf, data, 119);
+  if (len == 141 && !got_uplink) {
+    memcpy(uplink_buf, data, 141);
     uplink_rssi = rssi;
     got_uplink = true;
   }
@@ -336,7 +336,7 @@ switch(reason) {
     uint32_t vbat_mv = read_vbat_mv();
     Serial.printf("[VBAT] %u mV\n", (unsigned)vbat_mv);
 
-    char out[330];
+    char out[512];
     int n = 0;
 
     n += snprintf(out + n, sizeof(out) - n,
@@ -355,8 +355,13 @@ switch(reason) {
     uint16_t bh_vbat = 0;
     int8_t bh_rssi = 0;
     bool have_bh = false;
+    uint16_t st_lux = 0;
+    float st_temp = 0, st_hum = 0, st_caseT = 0;
+    uint16_t st_vbat = 0;
+    int8_t st_rssi = 0;
+    bool have_st = false;
 
-    for (uint8_t si = 1; si < count && si < 5; si++) {
+    for (uint8_t si = 1; si < count && si < 6; si++) {
       uint32_t sid;
       uint16_t seq, ph10;
       float t, h, caseT;
@@ -392,6 +397,16 @@ switch(reason) {
         bh_rssi  = soil_rssi;
         have_bh  = true;
         continue;
+      } else if (sensor_slot == 5) {
+        // STNST: sensorstation (BH1750+SHT3x), niet in "s" array
+        st_lux   = ec;
+        st_temp  = t;
+        st_hum   = h;
+        st_caseT = caseT;
+        st_vbat  = vbat;
+        st_rssi  = soil_rssi;
+        have_st  = true;
+        continue;
       } else {
         // SOIL2: [t, h, caseT, vbat, rssi]
         n += snprintf(out + n, sizeof(out) - n,
@@ -412,6 +427,10 @@ switch(reason) {
     if (have_bh)
       n += snprintf(out + n, sizeof(out) - n, ",\"bh\":[%u,%.1f,%u,%d]",
                     (unsigned)bh_lux, bh_caseT, (unsigned)bh_vbat, (int)bh_rssi);
+
+    if (have_st)
+      n += snprintf(out + n, sizeof(out) - n, ",\"st\":[%u,%.1f,%.1f,%.1f,%u,%d]",
+                    (unsigned)st_lux, st_temp, st_hum, st_caseT, (unsigned)st_vbat, (int)st_rssi);
 
     n += snprintf(out + n, sizeof(out) - n, ",\"lnC3-vbat\":%u}", (unsigned)vbat_mv);
     out[sizeof(out) - 1] = '\0';

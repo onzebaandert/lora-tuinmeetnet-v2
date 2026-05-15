@@ -24,6 +24,10 @@ if (d.bh !== undefined) {
   lines.push('bh1750 lux=' + d.bh[0] + 'i,temp_case=' + d.bh[1] + ',vbat=' + d.bh[2] + 'i,rssi=' + d.bh[3] + ' ' + ts);
 }
 
+if (d.st !== undefined) {
+  lines.push('sensorstation lux=' + d.st[0] + 'i,temperatuur=' + d.st[1] + ',vochtigheid=' + d.st[2] + ',temp_case=' + d.st[3] + ',vbat=' + d.st[4] + 'i,rssi=' + d.st[5] + ' ' + ts);
+}
+
 msg.payload = lines.join(String.fromCharCode(10));
 msg.headers = {'Authorization': 'Token x84Y0jPGr42X1QCA9rIYFU9GXXuHzMNJBMUdv9v9xPr_baeVKm-WUIB6FIHRW6eRTNfWM-8obb_eJ8J7UT3e2Q==', 'Content-Type': 'text/plain'};
 msg.url = 'http://localhost:8086/api/v2/write?org=tuinmeetnet&bucket=tuinsensoren_v4&precision=ns';
