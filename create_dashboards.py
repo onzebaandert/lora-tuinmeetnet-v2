@@ -241,6 +241,9 @@ def build_moestuin():
     p.append(ts("Luchtvochtigheid — sensorstation (SHT3x)", 12, y, 12, 8,
                 [q("sensorstation", "vochtigheid", "stnst-hum")], unit="humidity"))
     y += 8
+    p.append(ts("Luchtdruk — sensorstation (BME280)", 0, y, 24, 8,
+                [q("sensorstation", "druk", "stnst-druk")], unit="pressurehpa"))
+    y += 8
 
     p.append(row("💧 Water", y)); y += 1
     p.append(ts("Totaal liters — wf1", 0, y, 24, 8,

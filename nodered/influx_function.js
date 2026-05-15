@@ -25,7 +25,7 @@ if (d.bh !== undefined) {
 }
 
 if (d.st !== undefined) {
-  lines.push('sensorstation lux=' + d.st[0] + 'i,temperatuur=' + d.st[1] + ',vochtigheid=' + d.st[2] + ',temp_case=' + d.st[3] + ',vbat=' + d.st[4] + 'i,rssi=' + d.st[5] + ' ' + ts);
+  lines.push('sensorstation lux=' + d.st[0] + 'i,temperatuur=' + d.st[1] + ',vochtigheid=' + d.st[2] + ',temp_case=' + d.st[3] + ',druk=' + d.st[4] + ',vbat=' + d.st[5] + 'i,rssi=' + d.st[6] + ' ' + ts);
 }
 
 msg.payload = lines.join(String.fromCharCode(10));

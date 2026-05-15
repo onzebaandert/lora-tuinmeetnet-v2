@@ -356,7 +356,7 @@ switch(reason) {
     int8_t bh_rssi = 0;
     bool have_bh = false;
     uint16_t st_lux = 0;
-    float st_temp = 0, st_hum = 0, st_caseT = 0;
+    float st_temp = 0, st_hum = 0, st_caseT = 0, st_pres = 0;
     uint16_t st_vbat = 0;
     int8_t st_rssi = 0;
     bool have_st = false;
@@ -398,11 +398,12 @@ switch(reason) {
         have_bh  = true;
         continue;
       } else if (sensor_slot == 5) {
-        // STNST: sensorstation (BH1750+SHT3x), niet in "s" array
+        // STNST: sensorstation (BH1750+SHT3x+BME280), niet in "s" array
         st_lux   = ec;
         st_temp  = t;
         st_hum   = h;
         st_caseT = caseT;
+        st_pres  = ph10 / 10.0f;  // ph10 = druk × 10 (hPa)
         st_vbat  = vbat;
         st_rssi  = soil_rssi;
         have_st  = true;
@@ -429,8 +430,8 @@ switch(reason) {
                     (unsigned)bh_lux, bh_caseT, (unsigned)bh_vbat, (int)bh_rssi);
 
     if (have_st)
-      n += snprintf(out + n, sizeof(out) - n, ",\"st\":[%u,%.1f,%.1f,%.1f,%u,%d]",
-                    (unsigned)st_lux, st_temp, st_hum, st_caseT, (unsigned)st_vbat, (int)st_rssi);
+      n += snprintf(out + n, sizeof(out) - n, ",\"st\":[%u,%.1f,%.1f,%.1f,%.1f,%u,%d]",
+                    (unsigned)st_lux, st_temp, st_hum, st_caseT, st_pres, (unsigned)st_vbat, (int)st_rssi);
 
     n += snprintf(out + n, sizeof(out) - n, ",\"lnC3-vbat\":%u}", (unsigned)vbat_mv);
     out[sizeof(out) - 1] = '\0';
