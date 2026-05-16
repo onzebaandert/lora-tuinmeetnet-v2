@@ -52,7 +52,7 @@ static const uint8_t AGG_MAC[6] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 // Verbind bat+ via 100K/100K spanningsdeler met GPIO1
 #define VBAT_PIN          1
 #define VBAT_SAMPLES      12
-#define VBAT_RATIO        2.0f
+#define VBAT_RATIO        3.2f  // 220K + 100K deler: (220+100)/100
 
 #define ACK_WAIT_MS       150
 #define MAX_RETRIES       2
