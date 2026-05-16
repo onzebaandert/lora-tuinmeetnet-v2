@@ -97,8 +97,11 @@ static_assert(sizeof(Ack) == 8, "Ack size");
 
 /* ===== VBAT ===== */
 static uint16_t read_vbat_mv(){
+  analogSetAttenuation(ADC_11db);  // 0–2500 mV range
+  // Eerste reads weggooien: ADC sample-capacitor oplaadtijd bij hoge bronimpedantie (100K/100K)
+  for (int i = 0; i < 5; i++) { analogReadMilliVolts(VBAT_PIN); delay(5); }
   uint32_t sum = 0;
-  for (int i = 0; i < VBAT_SAMPLES; i++) { sum += analogReadMilliVolts(VBAT_PIN); delay(2); }
+  for (int i = 0; i < VBAT_SAMPLES; i++) { sum += analogReadMilliVolts(VBAT_PIN); delay(5); }
   float avg_mv = (float)sum / (float)VBAT_SAMPLES;
   return (uint16_t)(avg_mv * VBAT_RATIO + 0.5f);
 }
