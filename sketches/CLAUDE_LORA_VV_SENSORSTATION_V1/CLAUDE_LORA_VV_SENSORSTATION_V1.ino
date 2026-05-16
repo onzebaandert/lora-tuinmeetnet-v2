@@ -97,12 +97,21 @@ static_assert(sizeof(Ack) == 8, "Ack size");
 
 /* ===== VBAT ===== */
 static uint16_t read_vbat_mv(){
-  analogSetAttenuation(ADC_11db);  // 0–2500 mV range
-  // Eerste reads weggooien: ADC sample-capacitor oplaadtijd bij hoge bronimpedantie (100K/100K)
-  for (int i = 0; i < 5; i++) { analogReadMilliVolts(VBAT_PIN); delay(5); }
+  analogSetAttenuation(ADC_11db);
+  for (int i = 0; i < 5; i++) { analogReadMilliVolts(VBAT_PIN); delay(10); }
+
+  // Mediaan filter: 20 samples sorteren, middelste 10 middelen
+  const int N = 20;
+  uint32_t s[N];
+  for (int i = 0; i < N; i++) { s[i] = analogReadMilliVolts(VBAT_PIN); delay(10); }
+  // bubble sort
+  for (int i = 0; i < N-1; i++)
+    for (int j = 0; j < N-1-i; j++)
+      if (s[j] > s[j+1]) { uint32_t t = s[j]; s[j] = s[j+1]; s[j+1] = t; }
+  // gemiddelde van middelste 10 (gooit 5 laagste en 5 hoogste weg)
   uint32_t sum = 0;
-  for (int i = 0; i < VBAT_SAMPLES; i++) { sum += analogReadMilliVolts(VBAT_PIN); delay(5); }
-  float avg_mv = (float)sum / (float)VBAT_SAMPLES;
+  for (int i = 5; i < 15; i++) sum += s[i];
+  float avg_mv = sum / 10.0f;
   return (uint16_t)(avg_mv * VBAT_RATIO + 0.5f);
 }
 
