@@ -3,7 +3,7 @@
   DEVICE : XIAO ESP32-C3
   ROLE   : Waterflow sender (YF-201B)
   NOTES  :
-    - Telt pulsen van YF-201B op FLOW_PIN
+    - Telt pulsen van YF-201B op FLOW_PIN (GPIO4 = D2)
     - Stuurt SoilPacket naar AGG via ESP-NOW elke SEND_INTERVAL_MS
     - Geen deep sleep (altijd aan voor puls-tellen)
     - Soil22 veld-mapping voor waterflow:
@@ -38,7 +38,7 @@
 #define ESPNOW_WIFI_CHANNEL   6
 static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 
-#define FLOW_PIN              5        // GPIO5 = D3, YF-201B signaalpin
+#define FLOW_PIN              4        // GPIO4 = D2, YF-201B signaalpin
 #define RESET_BTN_PIN         2        // GPIO2 = D0, ingedrukt bij boot = NVS reset
 #define PULSES_PER_LITER      450.0f   // YF-201B: F(Hz) = 7.5 * Q(L/min) → 450 p/L
 
