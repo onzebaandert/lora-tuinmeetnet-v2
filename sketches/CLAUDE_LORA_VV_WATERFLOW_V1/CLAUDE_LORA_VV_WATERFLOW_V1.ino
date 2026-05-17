@@ -136,6 +136,12 @@ static uint16_t read_vbat_mv() {
   return (uint16_t)lroundf(vout * VBAT_FACTOR * VBAT_CAL * 1000.0f);
 }
 
+/* ===== toestand ===== */
+static float    totalLiters = 0.0f;
+static float    flowRate    = 0.0f;
+static uint32_t session_id  = 0;
+static uint16_t seq         = 0;
+
 /* ===== NVS ===== */
 static Preferences prefs;
 
@@ -144,12 +150,6 @@ static void nvs_save() {
   prefs.putFloat("total", totalLiters);
   prefs.end();
 }
-
-/* ===== toestand ===== */
-static float    totalLiters = 0.0f;
-static float    flowRate    = 0.0f;
-static uint32_t session_id  = 0;
-static uint16_t seq         = 0;
 
 void setup() {
   Serial.begin(115200);
