@@ -14,7 +14,7 @@
         vbat_mv  = accuspanning in mV
         ph_x10   = (uint16)(frac(totalLiters) * 1000)  (milli-liter deel)
         flags    = 0xF001 (waterflow OK) / 0xF000 (fout)
-    - totalLiters opgeslagen in NVS (overleeft herstart)
+    - totalLiters start altijd op 0 bij opstarten (geen NVS)
 
   EERSTE KEER FLASHEN:
     Lees MAC-adres uit seriële output: [WF] MAC=XX:XX:XX:XX:XX:XX
@@ -24,7 +24,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_now.h>
-#include <Preferences.h>
 
 #define SKETCH_TAG "VV_WATERFLOW_V100"
 
@@ -37,7 +36,6 @@ static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 
 #define FLOW_INTERVAL_MS      5000UL   // flow rate berekening interval
 #define SEND_INTERVAL_MS      60000UL  // ESP-NOW verstuur interval
-#define NVS_SAVE_INTERVAL_MS  300000UL // NVS opslaan interval (5 min)
 
 #define VBAT_PIN              3
 #define VBAT_SAMPLES          12
@@ -134,13 +132,6 @@ static float    totalLiters = 0.0f;
 static float    flowRate    = 0.0f;
 static uint32_t session_id  = 0;
 static uint16_t seq         = 0;
-static Preferences prefs;
-
-static void nvs_save() {
-  prefs.begin("waterflow", false);
-  prefs.putFloat("total", totalLiters);
-  prefs.end();
-}
 
 void setup() {
   Serial.begin(115200);
@@ -153,11 +144,6 @@ void setup() {
 
   pinMode(FLOW_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(FLOW_PIN), onPulse, FALLING);
-
-  prefs.begin("waterflow", true);
-  totalLiters = prefs.getFloat("total", 0.0f);
-  prefs.end();
-  Serial.printf("[NVS] totalLiters hersteld: %.3f L\n", totalLiters);
 
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
@@ -185,7 +171,6 @@ void setup() {
 void loop() {
   static uint32_t lastFlow = 0;
   static uint32_t lastSend = 0;
-  static uint32_t lastNvs  = 0;
   uint32_t now = millis();
 
   // Flow rate berekenen
@@ -201,13 +186,6 @@ void loop() {
 
     Serial.printf("[WF] flow=%.2f L/min  totaal=%.3f L\n", flowRate, totalLiters);
     lastFlow = now;
-  }
-
-  // NVS opslaan
-  if (now - lastNvs >= NVS_SAVE_INTERVAL_MS) {
-    nvs_save();
-    Serial.printf("[NVS] opgeslagen: %.3f L\n", totalLiters);
-    lastNvs = now;
   }
 
   // ESP-NOW versturen naar AGG
