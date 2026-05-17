@@ -226,7 +226,7 @@ void loop() {
     flowRate     = (pulses / PULSES_PER_LITER) / intervalMin;
     totalLiters += pulses / PULSES_PER_LITER;
 
-    Serial.printf("[WF] flow=%.2f L/min  totaal=%.3f L\n", flowRate, totalLiters);
+    Serial.printf("[WF] pulsen=%u  flow=%.2f L/min  totaal=%.3f L\n", pulses, flowRate, totalLiters);
     lastFlow = now;
   }
 
