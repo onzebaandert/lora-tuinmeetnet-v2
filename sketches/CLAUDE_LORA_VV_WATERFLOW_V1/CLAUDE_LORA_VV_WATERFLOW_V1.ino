@@ -32,13 +32,14 @@
 #include <esp_now.h>
 #include <Preferences.h>
 
-#define SKETCH_TAG "VV_WATERFLOW_V101"
+#define SKETCH_TAG "VV_WATERFLOW_V102"
 
 /* ============== CONFIG ============== */
 #define ESPNOW_WIFI_CHANNEL   6
 static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 
 #define FLOW_PIN              4        // GPIO4 = D2, YF-201B signaalpin
+#define MOSFET_PIN            6        // GPIO6 = D4, 5V voeding YF-201B (vast aan, switch volgt later)
 #define RESET_BTN_PIN         2        // GPIO2 = D0, ingedrukt bij boot = NVS reset
 #define PULSES_PER_LITER      450.0f   // YF-201B: F(Hz) = 7.5 * Q(L/min) → 450 p/L
 
@@ -159,6 +160,10 @@ void setup() {
   Serial.println("SKETCH : LORA_VV_WATERFLOW_V1");
   Serial.printf ("TAG    : %s\n", SKETCH_TAG);
   Serial.println("===========================================");
+
+  // MOSFET aan: 5V naar YF-201B
+  pinMode(MOSFET_PIN, OUTPUT);
+  digitalWrite(MOSFET_PIN, HIGH);
 
   // Reset knop: INPUT_PULLUP, LOW = ingedrukt
   pinMode(RESET_BTN_PIN, INPUT_PULLUP);
