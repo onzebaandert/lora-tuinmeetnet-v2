@@ -38,7 +38,7 @@
 #include <Preferences.h>
 #include <esp_sleep.h>
 
-#define SKETCH_TAG "VV_WATERFLOW_V105"
+#define SKETCH_TAG "VV_WATERFLOW_V106"
 
 /* ============== CONFIG ============== */
 #define ESPNOW_WIFI_CHANNEL   6
@@ -52,6 +52,7 @@ static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 
 #define FLOW_INTERVAL_MS      5000UL   // flow rate berekening interval
 #define SEND_INTERVAL_MS      25000UL  // verstuur interval (herhaalt tot ack=1)
+#define MAX_AWAKE_MS          480000UL // max 8 minuten wakker (2 AGG cycli), daarna toch slapen
 
 #define VBAT_PIN              3
 #define VBAT_SAMPLES          12
@@ -292,5 +293,12 @@ void loop() {
     }
 
     lastSend = now;
+  }
+
+  // Noodstop: na 8 minuten toch slapen (AGG gemist)
+  if (now >= MAX_AWAKE_MS) {
+    nvs_save();
+    Serial.println("[WF] Max wachttijd bereikt, ga toch slapen.");
+    go_to_sleep();
   }
 }
