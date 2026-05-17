@@ -3,9 +3,10 @@
   DEVICE : XIAO ESP32-C3
   ROLE   : Waterflow sender (YF-201B)
   NOTES  :
-    - Telt pulsen van YF-201B op FLOW_PIN (GPIO4 = D2)
-    - Stuurt SoilPacket naar AGG via ESP-NOW elke SEND_INTERVAL_MS
-    - Geen deep sleep (altijd aan voor puls-tellen)
+    - Waterflow switch op D3 (GPIO5) wekt XIAO uit deep sleep
+    - MOSFET op D4 (GPIO6) schakelt 5V naar YF-201B
+    - YF-201B op D2 (GPIO4) telt pulsen tijdens meting
+    - Na meting: data naar AGG via ESP-NOW, dan terug naar deep sleep
     - Soil22 veld-mapping voor waterflow:
         t_x10    = 0 (ongebruikt)
         h_x10    = flowRate * 10  (L/min, 0.1 resolutie)
@@ -17,8 +18,11 @@
     - totalLiters cumulatief opgeslagen in NVS (overleeft herstart)
     - Jaarlijkse reset (1 mei): RESET_BTN_PIN ingedrukt houden bij inschakelen
 
+  TESTEN ZONDER WATER:
+    D3 even naar GND = simuleert waterflow switch → XIAO waakt, meet, stuurt, slaapt
+
   RESET PROCEDURE (bijv. elke 1 mei):
-    1. Houd de resetknop (RESET_BTN_PIN → GND) ingedrukt
+    1. Houd de resetknop (D0 → GND) ingedrukt
     2. Zet de stroom aan
     3. Wacht op "[NVS] RESET" in seriële output, laat knop los
 
@@ -31,28 +35,27 @@
 #include <WiFi.h>
 #include <esp_now.h>
 #include <Preferences.h>
+#include <esp_sleep.h>
 
-#define SKETCH_TAG "VV_WATERFLOW_V102"
+#define SKETCH_TAG "VV_WATERFLOW_V103"
 
 /* ============== CONFIG ============== */
 #define ESPNOW_WIFI_CHANNEL   6
 static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 
 #define FLOW_PIN              4        // GPIO4 = D2, YF-201B signaalpin
-#define MOSFET_PIN            6        // GPIO6 = D4, 5V voeding YF-201B (vast aan, switch volgt later)
+#define MOSFET_PIN            6        // GPIO6 = D4, 5V voeding YF-201B
+#define FLOW_SWITCH_PIN       5        // GPIO5 = D3, waterflow switch (LOW = water)
 #define RESET_BTN_PIN         2        // GPIO2 = D0, ingedrukt bij boot = NVS reset
 #define PULSES_PER_LITER      450.0f   // YF-201B: F(Hz) = 7.5 * Q(L/min) → 450 p/L
 
-#define FLOW_INTERVAL_MS      5000UL   // flow rate berekening interval
-#define SEND_INTERVAL_MS      60000UL  // ESP-NOW verstuur interval
-#define NVS_SAVE_INTERVAL_MS  300000UL // NVS opslaan interval (5 min)
+#define MEASURE_MS            10000UL  // meetvenster na wakeup (10 sec)
+#define SEND_INTERVAL_MS      60000UL  // minimale tijd tussen versturen
 
 #define VBAT_PIN              3
 #define VBAT_SAMPLES          12
 #define VBAT_FACTOR           3.20f
 #define VBAT_CAL              1.000f
-#define ADC_VREF              3.30f
-#define ADC_MAX               4095.0f
 
 #define ACK_WAIT_MS           400
 #define MAX_RETRIES           2
@@ -152,6 +155,20 @@ static void nvs_save() {
   prefs.end();
 }
 
+static void go_to_sleep() {
+  // Wacht tot switch loslaat (HIGH) voor we slapen
+  Serial.println("[WF] wacht op switch loslaten...");
+  while (digitalRead(FLOW_SWITCH_PIN) == LOW) delay(50);
+  delay(100);  // debouncen
+
+  digitalWrite(MOSFET_PIN, LOW);
+  Serial.println("[WF] MOSFET uit, ga slapen. D3→GND om wakker te worden.");
+  Serial.flush();
+
+  esp_deep_sleep_enable_gpio_wakeup(1ULL << FLOW_SWITCH_PIN, ESP_GPIO_WAKEUP_GPIO_LOW);
+  esp_deep_sleep_start();
+}
+
 void setup() {
   Serial.begin(115200);
   delay(120);
@@ -165,10 +182,14 @@ void setup() {
   pinMode(MOSFET_PIN, OUTPUT);
   digitalWrite(MOSFET_PIN, HIGH);
 
-  // Reset knop: INPUT_PULLUP, LOW = ingedrukt
-  pinMode(RESET_BTN_PIN, INPUT_PULLUP);
-  delay(50);  // pullup stabiliseren
+  // Waterflow switch
+  pinMode(FLOW_SWITCH_PIN, INPUT_PULLUP);
 
+  // Reset knop
+  pinMode(RESET_BTN_PIN, INPUT_PULLUP);
+  delay(50);
+
+  // Flow interrupt
   pinMode(FLOW_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(FLOW_PIN), onPulse, FALLING);
 
@@ -186,6 +207,7 @@ void setup() {
     Serial.printf("[NVS] hersteld: %.3f L\n", totalLiters);
   }
 
+  // WiFi + ESP-NOW
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   WiFi.setChannel(ESPNOW_WIFI_CHANNEL);
@@ -194,84 +216,68 @@ void setup() {
   session_id = esp_random();
   Serial.printf("[WF] MAC=%s sid=0x%08lX\n",
                 WiFi.macAddress().c_str(), (unsigned long)session_id);
-  Serial.println("[WF] >>> Kopieer MAC hierboven naar SOIL_MACS[2] in AGG sketch <<<");
 
   if (esp_now_init() != ESP_OK) {
     Serial.println("[WF] esp_now_init FAILED");
-  } else {
-    esp_now_register_recv_cb(on_recv);
-    esp_now_peer_info_t p{};
-    memcpy(p.peer_addr, AGG_MAC, 6);
-    p.channel  = ESPNOW_WIFI_CHANNEL;
-    p.encrypt  = false;
-    esp_now_add_peer(&p);
-    Serial.println("[WF] ESP-NOW gereed");
+    go_to_sleep();
   }
+  esp_now_register_recv_cb(on_recv);
+  esp_now_peer_info_t p{};
+  memcpy(p.peer_addr, AGG_MAC, 6);
+  p.channel = ESPNOW_WIFI_CHANNEL;
+  p.encrypt = false;
+  esp_now_add_peer(&p);
+  Serial.println("[WF] ESP-NOW gereed");
+
+  // Meetvenster
+  Serial.printf("[WF] meten voor %lu ms...\n", MEASURE_MS);
+  delay(MEASURE_MS);
+
+  noInterrupts();
+  uint32_t pulses = pulse_isr;
+  pulse_isr = 0;
+  interrupts();
+
+  float intervalMin = MEASURE_MS / 60000.0f;
+  flowRate     = (pulses / PULSES_PER_LITER) / intervalMin;
+  totalLiters += pulses / PULSES_PER_LITER;
+
+  Serial.printf("[WF] pulsen=%u  flow=%.2f L/min  totaal=%.3f L\n",
+                pulses, flowRate, totalLiters);
+
+  nvs_save();
+
+  // Versturen naar AGG
+  uint16_t vbat_mv   = read_vbat_mv();
+  uint16_t flow_x10  = (uint16_t)lroundf(flowRate * 10.0f);
+  uint16_t liters_i  = (uint16_t)totalLiters;
+  uint16_t liters_ml = (uint16_t)(fmodf(totalLiters, 1.0f) * 1000.0f);
+
+  SoilPacket pkt{};
+  pkt.magic        = 0xA1;
+  pkt.id           = 3;
+  pkt.s.session_id = session_id;
+  pkt.s.seq        = ++seq;
+  pkt.s.t_x10      = 0;
+  pkt.s.h_x10      = flow_x10;
+  pkt.s.ec_raw     = liters_i;
+  pkt.s.case_x10   = 0;
+  pkt.s.vbat_mv    = vbat_mv;
+  pkt.s.ph_x10     = liters_ml;
+  pkt.s.flags      = 0xF001;
+  pkt.s.rsv0       = 0;
+
+  for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    esp_err_t txe = esp_now_send(AGG_MAC, (const uint8_t*)&pkt, sizeof(pkt));
+    bool tx_ok    = (txe == ESP_OK);
+    bool ack_ok   = tx_ok ? wait_ack(pkt.s.session_id, pkt.s.seq) : false;
+    Serial.printf("[WF] TX seq=%u attempt=%d tx=%d ack=%d vbat=%umV\n",
+                  (unsigned)pkt.s.seq, attempt, tx_ok, ack_ok, (unsigned)vbat_mv);
+    if (ack_ok) break;
+    delay(50);
+  }
+
+  go_to_sleep();
 }
 
-void loop() {
-  static uint32_t lastFlow = 0;
-  static uint32_t lastSend = 0;
-  static uint32_t lastNvs  = 0;
-  uint32_t now = millis();
-
-  // Flow rate berekenen
-  if (now - lastFlow >= FLOW_INTERVAL_MS) {
-    noInterrupts();
-    uint32_t pulses = pulse_isr;
-    pulse_isr = 0;
-    interrupts();
-
-    float intervalMin = FLOW_INTERVAL_MS / 60000.0f;
-    flowRate     = (pulses / PULSES_PER_LITER) / intervalMin;
-    totalLiters += pulses / PULSES_PER_LITER;
-
-    Serial.printf("[WF] pulsen=%u  flow=%.2f L/min  totaal=%.3f L\n", pulses, flowRate, totalLiters);
-    lastFlow = now;
-  }
-
-  // NVS opslaan elke 5 minuten
-  if (now - lastNvs >= NVS_SAVE_INTERVAL_MS) {
-    nvs_save();
-    Serial.printf("[NVS] opgeslagen: %.3f L\n", totalLiters);
-    lastNvs = now;
-  }
-
-  // ESP-NOW versturen naar AGG
-  if (now - lastSend >= SEND_INTERVAL_MS) {
-    uint16_t vbat_mv   = read_vbat_mv();
-    uint16_t flow_x10  = (uint16_t)lroundf(flowRate * 10.0f);
-    uint16_t liters_i  = (uint16_t)totalLiters;
-    uint16_t liters_ml = (uint16_t)(fmodf(totalLiters, 1.0f) * 1000.0f);
-
-    SoilPacket pkt{};
-    pkt.magic        = 0xA1;
-    pkt.id           = 3;
-    pkt.s.session_id = session_id;
-    pkt.s.seq        = ++seq;
-    pkt.s.t_x10      = 0;
-    pkt.s.h_x10      = flow_x10;
-    pkt.s.ec_raw     = liters_i;
-    pkt.s.case_x10   = 0;
-    pkt.s.vbat_mv    = vbat_mv;
-    pkt.s.ph_x10     = liters_ml;
-    pkt.s.flags      = 0xF001;
-    pkt.s.rsv0       = 0;
-
-    bool delivered = false;
-    for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      esp_err_t txe  = esp_now_send(AGG_MAC, (const uint8_t*)&pkt, sizeof(pkt));
-      bool tx_ok     = (txe == ESP_OK);
-      bool ack_ok    = tx_ok ? wait_ack(pkt.s.session_id, pkt.s.seq) : false;
-
-      Serial.printf("[WF] TX seq=%u attempt=%d tx=%d ack=%d flow=%.2f total=%.3f vbat=%umV\n",
-                    (unsigned)pkt.s.seq, attempt, tx_ok ? 1 : 0, ack_ok ? 1 : 0,
-                    flowRate, totalLiters, (unsigned)vbat_mv);
-
-      if (ack_ok) { delivered = true; break; }
-      delay(50);
-    }
-
-    lastSend = now;
-  }
-}
+void loop() {}
