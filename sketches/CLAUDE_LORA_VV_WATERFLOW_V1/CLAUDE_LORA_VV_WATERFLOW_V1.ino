@@ -14,7 +14,13 @@
         vbat_mv  = accuspanning in mV
         ph_x10   = (uint16)(frac(totalLiters) * 1000)  (milli-liter deel)
         flags    = 0xF001 (waterflow OK) / 0xF000 (fout)
-    - totalLiters start altijd op 0 bij opstarten (geen NVS)
+    - totalLiters cumulatief opgeslagen in NVS (overleeft herstart)
+    - Jaarlijkse reset (1 mei): RESET_BTN_PIN ingedrukt houden bij inschakelen
+
+  RESET PROCEDURE (bijv. elke 1 mei):
+    1. Houd de resetknop (RESET_BTN_PIN → GND) ingedrukt
+    2. Zet de stroom aan
+    3. Wacht op "[NVS] RESET" in seriële output, laat knop los
 
   EERSTE KEER FLASHEN:
     Lees MAC-adres uit seriële output: [WF] MAC=XX:XX:XX:XX:XX:XX
@@ -24,18 +30,21 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_now.h>
+#include <Preferences.h>
 
-#define SKETCH_TAG "VV_WATERFLOW_V100"
+#define SKETCH_TAG "VV_WATERFLOW_V101"
 
 /* ============== CONFIG ============== */
 #define ESPNOW_WIFI_CHANNEL   6
 static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 
-#define FLOW_PIN              5        // GPIO5 = D3, YF-C01 signaalpin
+#define FLOW_PIN              5        // GPIO5 = D3, YF-201B signaalpin
+#define RESET_BTN_PIN         2        // GPIO2 = D0, ingedrukt bij boot = NVS reset
 #define PULSES_PER_LITER      450.0f   // YF-201B: F(Hz) = 7.5 * Q(L/min) → 450 p/L
 
 #define FLOW_INTERVAL_MS      5000UL   // flow rate berekening interval
 #define SEND_INTERVAL_MS      60000UL  // ESP-NOW verstuur interval
+#define NVS_SAVE_INTERVAL_MS  300000UL // NVS opslaan interval (5 min)
 
 #define VBAT_PIN              3
 #define VBAT_SAMPLES          12
@@ -127,6 +136,15 @@ static uint16_t read_vbat_mv() {
   return (uint16_t)lroundf(vout * VBAT_FACTOR * VBAT_CAL * 1000.0f);
 }
 
+/* ===== NVS ===== */
+static Preferences prefs;
+
+static void nvs_save() {
+  prefs.begin("waterflow", false);
+  prefs.putFloat("total", totalLiters);
+  prefs.end();
+}
+
 /* ===== toestand ===== */
 static float    totalLiters = 0.0f;
 static float    flowRate    = 0.0f;
@@ -142,8 +160,26 @@ void setup() {
   Serial.printf ("TAG    : %s\n", SKETCH_TAG);
   Serial.println("===========================================");
 
+  // Reset knop: INPUT_PULLUP, LOW = ingedrukt
+  pinMode(RESET_BTN_PIN, INPUT_PULLUP);
+  delay(50);  // pullup stabiliseren
+
   pinMode(FLOW_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(FLOW_PIN), onPulse, FALLING);
+
+  // NVS laden of resetten
+  if (digitalRead(RESET_BTN_PIN) == LOW) {
+    prefs.begin("waterflow", false);
+    prefs.putFloat("total", 0.0f);
+    prefs.end();
+    totalLiters = 0.0f;
+    Serial.println("[NVS] RESET: teller op 0.000 L");
+  } else {
+    prefs.begin("waterflow", true);
+    totalLiters = prefs.getFloat("total", 0.0f);
+    prefs.end();
+    Serial.printf("[NVS] hersteld: %.3f L\n", totalLiters);
+  }
 
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
@@ -171,6 +207,7 @@ void setup() {
 void loop() {
   static uint32_t lastFlow = 0;
   static uint32_t lastSend = 0;
+  static uint32_t lastNvs  = 0;
   uint32_t now = millis();
 
   // Flow rate berekenen
@@ -186,6 +223,13 @@ void loop() {
 
     Serial.printf("[WF] flow=%.2f L/min  totaal=%.3f L\n", flowRate, totalLiters);
     lastFlow = now;
+  }
+
+  // NVS opslaan elke 5 minuten
+  if (now - lastNvs >= NVS_SAVE_INTERVAL_MS) {
+    nvs_save();
+    Serial.printf("[NVS] opgeslagen: %.3f L\n", totalLiters);
+    lastNvs = now;
   }
 
   // ESP-NOW versturen naar AGG
