@@ -38,7 +38,7 @@
 #include <Preferences.h>
 #include <esp_sleep.h>
 
-#define SKETCH_TAG "VV_WATERFLOW_V104"
+#define SKETCH_TAG "VV_WATERFLOW_V105"
 
 /* ============== CONFIG ============== */
 #define ESPNOW_WIFI_CHANNEL   6
@@ -50,8 +50,8 @@ static const uint8_t AGG_MAC[6] = {0xB0, 0xA6, 0x04, 0x07, 0xA2, 0x80};
 #define RESET_BTN_PIN         2        // GPIO2 = D0, ingedrukt bij boot = NVS reset
 #define PULSES_PER_LITER      450.0f   // YF-201B: F(Hz) = 7.5 * Q(L/min) → 450 p/L
 
-#define MEASURE_MS            10000UL  // meetvenster na wakeup (10 sec)
-#define SEND_INTERVAL_MS      60000UL  // minimale tijd tussen versturen
+#define FLOW_INTERVAL_MS      5000UL   // flow rate berekening interval
+#define SEND_INTERVAL_MS      25000UL  // verstuur interval (herhaalt tot ack=1)
 
 #define VBAT_PIN              3
 #define VBAT_SAMPLES          12
@@ -229,57 +229,68 @@ void setup() {
   p.channel = ESPNOW_WIFI_CHANNEL;
   p.encrypt = false;
   esp_now_add_peer(&p);
-  Serial.println("[WF] ESP-NOW gereed");
-
-  // Meetvenster
-  Serial.printf("[WF] meten voor %lu ms...\n", MEASURE_MS);
-  delay(MEASURE_MS);
-
-  noInterrupts();
-  uint32_t pulses = pulse_isr;
-  pulse_isr = 0;
-  interrupts();
-
-  float intervalMin = MEASURE_MS / 60000.0f;
-  flowRate     = (pulses / PULSES_PER_LITER) / intervalMin;
-  totalLiters += pulses / PULSES_PER_LITER;
-
-  Serial.printf("[WF] pulsen=%u  flow=%.2f L/min  totaal=%.3f L\n",
-                pulses, flowRate, totalLiters);
-
-  nvs_save();
-
-  // Versturen naar AGG
-  uint16_t vbat_mv   = read_vbat_mv();
-  uint16_t flow_x10  = (uint16_t)lroundf(flowRate * 10.0f);
-  uint16_t liters_i  = (uint16_t)totalLiters;
-  uint16_t liters_ml = (uint16_t)(fmodf(totalLiters, 1.0f) * 1000.0f);
-
-  SoilPacket pkt{};
-  pkt.magic        = 0xA1;
-  pkt.id           = 3;
-  pkt.s.session_id = session_id;
-  pkt.s.seq        = ++seq;
-  pkt.s.t_x10      = 0;
-  pkt.s.h_x10      = flow_x10;
-  pkt.s.ec_raw     = liters_i;
-  pkt.s.case_x10   = 0;
-  pkt.s.vbat_mv    = vbat_mv;
-  pkt.s.ph_x10     = liters_ml;
-  pkt.s.flags      = 0xF001;
-  pkt.s.rsv0       = 0;
-
-  for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    esp_err_t txe = esp_now_send(AGG_MAC, (const uint8_t*)&pkt, sizeof(pkt));
-    bool tx_ok    = (txe == ESP_OK);
-    bool ack_ok   = tx_ok ? wait_ack(pkt.s.session_id, pkt.s.seq) : false;
-    Serial.printf("[WF] TX seq=%u attempt=%d tx=%d ack=%d vbat=%umV\n",
-                  (unsigned)pkt.s.seq, attempt, tx_ok, ack_ok, (unsigned)vbat_mv);
-    if (ack_ok) break;
-    delay(50);
-  }
-
-  go_to_sleep();
+  Serial.println("[WF] ESP-NOW gereed, meten gestart...");
 }
 
-void loop() {}
+void loop() {
+  static uint32_t lastFlow = 0;
+  static uint32_t lastSend = 0;
+  uint32_t now = millis();
+
+  // Flow rate berekenen elke 5 seconden
+  if (now - lastFlow >= FLOW_INTERVAL_MS) {
+    noInterrupts();
+    uint32_t pulses = pulse_isr;
+    pulse_isr = 0;
+    interrupts();
+
+    float intervalMin = FLOW_INTERVAL_MS / 60000.0f;
+    flowRate     = (pulses / PULSES_PER_LITER) / intervalMin;
+    totalLiters += pulses / PULSES_PER_LITER;
+
+    Serial.printf("[WF] pulsen=%u  flow=%.2f L/min  totaal=%.3f L\n",
+                  pulses, flowRate, totalLiters);
+    lastFlow = now;
+  }
+
+  // Elke 25 seconden versturen tot ack=1, daarna slapen
+  if (now - lastSend >= SEND_INTERVAL_MS) {
+    uint16_t vbat_mv   = read_vbat_mv();
+    uint16_t flow_x10  = (uint16_t)lroundf(flowRate * 10.0f);
+    uint16_t liters_i  = (uint16_t)totalLiters;
+    uint16_t liters_ml = (uint16_t)(fmodf(totalLiters, 1.0f) * 1000.0f);
+
+    SoilPacket pkt{};
+    pkt.magic        = 0xA1;
+    pkt.id           = 3;
+    pkt.s.session_id = session_id;
+    pkt.s.seq        = ++seq;
+    pkt.s.t_x10      = 0;
+    pkt.s.h_x10      = flow_x10;
+    pkt.s.ec_raw     = liters_i;
+    pkt.s.case_x10   = 0;
+    pkt.s.vbat_mv    = vbat_mv;
+    pkt.s.ph_x10     = liters_ml;
+    pkt.s.flags      = 0xF001;
+    pkt.s.rsv0       = 0;
+
+    bool delivered = false;
+    for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      esp_err_t txe = esp_now_send(AGG_MAC, (const uint8_t*)&pkt, sizeof(pkt));
+      bool tx_ok    = (txe == ESP_OK);
+      bool ack_ok   = tx_ok ? wait_ack(pkt.s.session_id, pkt.s.seq) : false;
+      Serial.printf("[WF] TX seq=%u attempt=%d tx=%d ack=%d vbat=%umV\n",
+                    (unsigned)pkt.s.seq, attempt, tx_ok, ack_ok, (unsigned)vbat_mv);
+      if (ack_ok) { delivered = true; break; }
+      delay(50);
+    }
+
+    if (delivered) {
+      nvs_save();
+      Serial.println("[WF] ACK ontvangen, NVS opgeslagen, ga slapen.");
+      go_to_sleep();
+    }
+
+    lastSend = now;
+  }
+}
