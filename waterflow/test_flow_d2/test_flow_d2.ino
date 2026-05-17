@@ -1,8 +1,10 @@
-// Simpele flowtest — YF-201B op D2 (GPIO4)
+// Simpele flowtest — YF-201B op D2 (GPIO4), MOSFET op D4 (GPIO6)
+// MOSFET altijd aan voor testdoeleinden
 // Seriële monitor: 115200 baud
 // Elke 5 seconden: pulsen, flow L/min, totaal L
 
-#define FLOW_PIN         4
+#define FLOW_PIN         4    // D2
+#define MOSFET_PIN       6    // D4
 #define PULSES_PER_LITER 450.0f
 #define INTERVAL_MS      5000
 
@@ -13,7 +15,12 @@ void IRAM_ATTR onPulse() { pulses++; }
 void setup() {
   Serial.begin(115200);
   delay(500);
-  Serial.println("=== flowtest D2 (GPIO4) ===");
+
+  // MOSFET aan: 5V naar YF-201B
+  pinMode(MOSFET_PIN, OUTPUT);
+  digitalWrite(MOSFET_PIN, HIGH);
+  Serial.println("=== flowtest D2 (GPIO4), MOSFET D4 aan ===");
+
   pinMode(FLOW_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(FLOW_PIN), onPulse, FALLING);
 }
