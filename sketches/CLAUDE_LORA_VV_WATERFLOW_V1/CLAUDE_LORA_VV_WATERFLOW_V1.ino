@@ -34,10 +34,11 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <esp_now.h>
+#include <esp_wifi.h>
 #include <Preferences.h>
 #include <esp_sleep.h>
 
-#define SKETCH_TAG "VV_WATERFLOW_V103"
+#define SKETCH_TAG "VV_WATERFLOW_V104"
 
 /* ============== CONFIG ============== */
 #define ESPNOW_WIFI_CHANNEL   6
@@ -210,8 +211,9 @@ void setup() {
   // WiFi + ESP-NOW
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
-  WiFi.setChannel(ESPNOW_WIFI_CHANNEL);
   while (!WiFi.STA.started()) delay(1);
+  esp_wifi_set_channel(ESPNOW_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
+  delay(100);  // WiFi stack stabiliseren na channel set
 
   session_id = esp_random();
   Serial.printf("[WF] MAC=%s sid=0x%08lX\n",
