@@ -35,6 +35,19 @@ void saveTotal() {
   prefs.end();
 }
 
+void handleReset() {
+  totalLiters = 0.0f;
+  memset(graphData, 0, sizeof(graphData));
+  graphHead  = 0;
+  graphCount = 0;
+  prefs.begin("waterflow", false);
+  prefs.putFloat("total", 0.0f);
+  prefs.end();
+  Serial.println("NVS reset: totaal op 0.00 L");
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
 void handleRoot() {
   // Bouw JS-array met grafiekdata (oudste → nieuwste)
   String jsData = "[";
@@ -60,6 +73,9 @@ void handleRoot() {
     ".lbl{color:#7f8c8d;margin-top:.3em}"
     ".chart-wrap{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.15);"
     "display:inline-block;padding:1em;margin:.5em}"
+    ".btn-reset{margin-top:1em;padding:.6em 1.6em;font-size:1em;background:#e74c3c;"
+    "color:#fff;border:none;border-radius:8px;cursor:pointer}"
+    ".btn-reset:hover{background:#c0392b}"
     "</style></head><body>"
     "<h1>YF-201B Waterflow</h1>"
     "<div class='card'><div class='val'>" + String(flowRate, 2) + " L/min</div>"
@@ -69,6 +85,8 @@ void handleRoot() {
     "<br><div class='chart-wrap'>"
     "<canvas id='c' width='400' height='200'></canvas></div>"
     "<p style='color:#aaa;font-size:.8em'>Grafiek: cumulatief totaal per 5 min (laatste 2 uur) &bull; pagina ververst elke 5s</p>"
+    "<form method='post' action='/reset' onsubmit=\"return confirm('Teller resetten naar 0?')\">"
+    "<button class='btn-reset' type='submit'>Reset teller</button></form>"
     "<script>"
     "var d=" + jsData + ";"
     "var cv=document.getElementById('c'),ctx=cv.getContext('2d');"
@@ -128,6 +146,7 @@ void setup() {
   Serial.println(WiFi.softAPIP());
 
   server.on("/", handleRoot);
+  server.on("/reset", HTTP_POST, handleReset);
   server.begin();
   Serial.println("Webserver gestart op poort 80");
 }
