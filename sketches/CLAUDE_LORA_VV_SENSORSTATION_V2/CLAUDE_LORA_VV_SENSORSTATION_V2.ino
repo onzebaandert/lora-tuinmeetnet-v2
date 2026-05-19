@@ -2,14 +2,15 @@
   SKETCH : LORA_VV_SENSORSTATION_V2
   DEVICE : ESP32-C3 Super Mini
   ROLE   : Licht + temp + vochtigheid + DS18B20 + batlev naar AGG via ESP-NOW
-  SENSOR : BH1750 (I2C 0x23) + SHT3x (I2C 0x44) + DS18B20 (OneWire GPIO6)
+  SENSOR : BH1750 (I2C 0x23) + SHT3x (I2C 0x44) + DS18B20 (OneWire GPIO2)
 
   Hardware aansluitingen:
     Super Mini GPIO3 (SDA) ──── BH1750 SDA  +  SHT3x SDA
     Super Mini GPIO4 (SCL) ──── BH1750 SCL  +  SHT3x SCL
     Super Mini GPIO1       ──── spanningsdeler uitgang bat+
-                                (220K van bat+ naar GPIO1, 100K van GPIO1 naar GND)
-    Super Mini GPIO6       ──── DS18B20 DATA  (4.7K pull-up naar 3.3V)
+                                (gemeten: divider=2.60V bat=3.77V → ratio=1.46)
+    Super Mini GPIO2       ──── DS18B20 DATA  (4.7K pull-up naar 3.3V)
+    LET OP: GPIO6-GPIO11 zijn SPI-flash pins op ESP32-C3, NIET gebruiken!
     BH1750 ADDR            ──── GND  (adres 0x23)
     SHT3x  ADDR            ──── GND  (adres 0x44)
 
@@ -49,14 +50,14 @@ static const uint8_t AGG_MAC[6] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 #define I2C_SDA           3    // Super Mini SDA
 #define I2C_SCL           4    // Super Mini SCL
 
-#define DS18B20_PIN       6    // DS18B20 data pin (4.7K pull-up naar 3.3V)
+#define DS18B20_PIN       2    // DS18B20 data pin (4.7K pull-up naar 3.3V) — GPIO6-11 zijn SPI flash!
 
 #define SLEEP_SEC         30
 #define DEV_HOLD_MS       8000UL
 
-// Batterij: 220K van bat+ naar GPIO1, 100K van GPIO1 naar GND → ratio = (220+100)/100 = 3.2
+// Batterij: spanningsdeler naar GPIO1, ratio gekalibreerd op 3.77V bat / 2.60V divider = 1.46
 #define VBAT_PIN          1
-#define VBAT_RATIO        3.2f
+#define VBAT_RATIO        1.46f
 
 #define ACK_WAIT_MS       150
 #define MAX_RETRIES       2
