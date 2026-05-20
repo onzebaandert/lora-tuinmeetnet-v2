@@ -25,7 +25,7 @@
 #define WAKE_PIN  2
 
 // cycle
-#define INTERVAL_MINUTES 5
+#define INTERVAL_MINUTES 20
 #define MINUTE_PHASE     0
 #define WAKE_SECOND      5
 #define LISTEN_MS        30000UL

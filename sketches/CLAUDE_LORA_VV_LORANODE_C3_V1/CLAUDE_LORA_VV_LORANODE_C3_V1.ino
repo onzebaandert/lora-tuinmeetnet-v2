@@ -13,7 +13,7 @@
 #define I2C_SCL   7
 #define WAKE_PIN  2
 
-#define INTERVAL_MINUTES 5
+#define INTERVAL_MINUTES 20
 #define MINUTE_PHASE     0
 #define WAKE_SECOND      5
 #define LISTEN_MAX_MS    40000UL

@@ -49,9 +49,9 @@ Twee gescheiden paden naar MQTT:
 
 | Node | Hardware | Sketch | Interval | Wake second |
 |---|---|---|---|---|
-| SOIL1 | XIAO ESP32-C3 + CWT Modbus | `CLAUDE_LORA_VV_SOIL1_V1` | 5 min | :08 |
-| SOIL2 | XIAO ESP32-C3 + ZTS Modbus | `CLAUDE_LORA_VV_SOIL2_V1` | 5 min | :16 |
-| BH1750 | XIAO ESP32-C3 + BH1750 + DS3231 | `CLAUDE_LORA_VV_BH1750_V1` | 5 min | :08 |
+| SOIL1 | XIAO ESP32-C3 + CWT Modbus | `CLAUDE_LORA_VV_SOIL1_V1` | 20 min | :08 |
+| SOIL2 | XIAO ESP32-C3 + ZTS Modbus | `CLAUDE_LORA_VV_SOIL2_V1` | 20 min | :16 |
+| BH1750 | XIAO ESP32-C3 + BH1750 + DS3231 | `CLAUDE_LORA_VV_BH1750_V1` | 20 min | :08 |
 | Waterflow | XIAO ESP32-C3 + YF-C01 | `CLAUDE_LORA_VV_WATERFLOW_SOLAR_V1` | event | — |
 
 Alle sensor nodes gebruiken een **DS3231 RTC** voor precisie-timing en een **LilyGo T-BAT** met 18650 batterij voor stroom.
@@ -153,9 +153,9 @@ Wemos D0         ── RST  (deep sleep wakeup)
 
 ---
 
-## Timing (5-minuten cyclus, DS3231 RTC)
+## Timing (20-minuten cyclus, DS3231 RTC)
 
-Alle nodes waken op een vast tweede binnen het 5-minuten interval. De volgorde zorgt dat data beschikbaar is vóór de volgende schakel stuurt.
+Alle nodes waken op een vast tweede binnen het 20-minuten interval. De volgorde zorgt dat data beschikbaar is vóór de volgende schakel stuurt.
 
 | Node | Wake second |
 |---|---|
