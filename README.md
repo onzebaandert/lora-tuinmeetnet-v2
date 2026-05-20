@@ -219,3 +219,56 @@ const char* password = "...";
 | Alle ESP32 nodes | Wire, WiFi, esp_now (ingebouwd) |
 
 Installeren via Arduino IDE → **Library Manager**.
+
+---
+
+## Ontwerp & Ervaringen
+
+Dit systeem is in de praktijk gebouwd en verfijnd. Hieronder een overzicht van wat goed werkt, wat we hebben geleerd en wat het systeem bijzonder maakt — voor makers én voor tuinders die gewoon willen weten wat er in hun grond gebeurt.
+
+### Metingen & sensoren
+
+De kwaliteit van metingen bleek belangrijker dan verwacht, vooral bij bodemvochtmeting. Goedkope sensoren gaven onbetrouwbare of moeilijk interpreteerbare waarden, wat leidde tot een bewuste keuze voor Modbus-sensoren met betere nauwkeurigheid.
+
+- Modbus bodemvochtmeters zijn ook beschikbaar met meting van EC (elektrische geleidbaarheid), pH en NPK (stikstof, fosfor, kalium) — waardevol voor serieuze moestuiniers
+- Alle sensoren die op een ESP32 aangesloten kunnen worden zijn in principe op te nemen in het systeem
+- Het meetinterval is instelbaar tussen 2 en 60 minuten, afhankelijk van wat je wilt volgen
+
+### Hardware & energie
+
+Het ontwerp is van begin af aan gericht op zo min mogelijk stroomverbruik, zodat nodes jaren mee kunnen op een kleine batterij en een klein zonnepaneel.
+
+- Alle apparaten zijn ontworpen voor laag stroomverbruik (low power)
+- Doel: volledig autonoom werken met een zonnepaneel van slechts 6V (formaat 10×7 cm)
+- Elk ESP32-apparaat met ESP-NOW ondersteuning kan worden opgenomen in het netwerk
+- De nieuwste ESP32 Arduino-bibliotheken worden gebruikt (ESP32 board v3), geüpload via Arduino IDE
+
+### Communicatie & netwerk
+
+Een van de belangrijkste ontwerpkeuzes was om géén gebruik te maken van commerciële LoRa-netwerken.
+
+- LoRa werkt hier rechtstreeks — geen TTN, Helium of Meshtastic nodig
+- Na uitgebreide tests bleek een Yagi-antenne in staat om een stabiele LoRa-verbinding te realiseren over de gewenste afstand
+- Eigen LoRa-netwerk maakt het mogelijk veel meer data per bericht te versturen dan de fair-use limieten van TTN of Helium toestaan
+- Het systeem kan tientallen sensoren aan
+- ESP-NOW-sensoren sturen hun data via UART naar het LoRa-apparaat
+- Het LoRa-apparaat is uitwisselbaar: vervangen door een TTN- of Meshtastic-gateway is mogelijk zonder de rest van het systeem te wijzigen
+- Sensoren binnen WiFi-bereik kunnen rechtstreeks via MQTT worden opgenomen — geen LoRa nodig
+
+### Systeem & onderhoud
+
+Het systeem is bewust open en aanpasbaar gehouden.
+
+- Volledig open source
+- Ontwikkeld en continu verbeterd met behulp van Claude Code
+- Claude Code beheert aanpassingen in Arduino-sketches, Node-RED, InfluxDB en Grafana
+- Onderhoud via Claude Code werkt uitstekend: wijzigingen zijn snel doorgevoerd en goed gedocumenteerd
+- Het systeem is modulair opgezet en ook voor andere toepassingen in te richten, buiten de tuin
+
+### Toegankelijkheid
+
+Het systeem is ontworpen om breed bruikbaar te zijn.
+
+- Het Grafana-dashboard is publiekelijk beschikbaar via een Cloudflare-tunnel
+- De publieke link werkt zonder inloggen — ideaal om metingen te delen met anderen
+- Het systeem is niet beperkt tot tuintoepassingen: elk meetprobleem waarbij sensoren op afstand draadloos data moeten verzenden is in principe geschikt
