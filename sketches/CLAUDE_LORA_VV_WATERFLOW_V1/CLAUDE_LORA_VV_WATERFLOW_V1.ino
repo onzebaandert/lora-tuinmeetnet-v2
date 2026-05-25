@@ -38,7 +38,7 @@
 #include <Preferences.h>
 #include <esp_sleep.h>
 
-#define SKETCH_TAG "VV_WATERFLOW_V106"
+#define SKETCH_TAG "VV_WATERFLOW_V107"
 
 /* ============== CONFIG ============== */
 #define ESPNOW_WIFI_CHANNEL   6
@@ -180,6 +180,11 @@ void setup() {
   Serial.printf ("TAG    : %s\n", SKETCH_TAG);
   Serial.println("===========================================");
 
+  // Flow interrupt EERST koppelen, daarna pas MOSFET aan
+  // (anders missen we pulsen in de milliseconden tussen MOSFET-aan en interrupt-attach)
+  pinMode(FLOW_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(FLOW_PIN), onPulse, FALLING);
+
   // MOSFET aan: 5V naar YF-201B
   pinMode(MOSFET_PIN, OUTPUT);
   digitalWrite(MOSFET_PIN, HIGH);
@@ -190,10 +195,6 @@ void setup() {
   // Reset knop
   pinMode(RESET_BTN_PIN, INPUT_PULLUP);
   delay(50);
-
-  // Flow interrupt
-  pinMode(FLOW_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(FLOW_PIN), onPulse, FALLING);
 
   // NVS laden of resetten
   if (digitalRead(RESET_BTN_PIN) == LOW) {
