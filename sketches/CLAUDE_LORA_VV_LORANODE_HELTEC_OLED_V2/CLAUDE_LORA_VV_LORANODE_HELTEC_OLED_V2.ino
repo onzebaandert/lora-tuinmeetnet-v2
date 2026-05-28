@@ -58,7 +58,7 @@ static const int8_t  LORA_PWR  = 14;
 
 /* ================= TX BEHAVIOR ================= */
 static const int MAX_LINE     = 240;
-static const int UART_WAIT_MS = 35000; // ruimer dan Wemos sleep interval (25s)
+static const int UART_WAIT_MS = 35000; // wachttijd per cyclus (C3 interval=10 min, Wemos sleep=25s)
 static const int TX_COPIES    = 1;
 static const int TX_GAP_MS    = 4000;
 
