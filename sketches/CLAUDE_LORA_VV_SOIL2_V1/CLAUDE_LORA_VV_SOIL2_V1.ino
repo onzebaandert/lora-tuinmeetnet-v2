@@ -25,7 +25,7 @@ static uint8_t AGG_MAC[] = {0xB0,0xA6,0x04,0x07,0xA2,0x80};
 #define I2C_SCL   6
 #define WAKE_PIN  2
 
-#define INTERVAL_MINUTES 10
+#define INTERVAL_MINUTES 5
 #define MINUTE_PHASE     0
 #define PHASE_SECOND     16
 #define DEV_HOLD_MS      8000UL
