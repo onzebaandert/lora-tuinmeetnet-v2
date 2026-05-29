@@ -2,7 +2,7 @@ const d = msg.payload;
 const ts = Date.now() * 1000000;
 const lines = [];
 
-lines.push('systeem agg_seq=' + (d.a||0) + 'i,rssi_lora=' + (d.r||0) + ',vbat_agg=' + Math.round((d.av||0) * 0.9694) + 'i,temp_agg=' + (d.ac||0) + ',rssi_heltec=' + (d.lr||0) + ',snr_heltec=' + (d.ls||0) + ',lnHel_vbat=' + Math.round((d['lnHelTuin-vbat']||0) * 1.1818) + 'i,lnC3_vbat=' + Math.round((d['lnC3-vbat']||0) * 1.0260) + 'i,mqtt_vbat=' + Math.round((d['lnHelTuin-tbat']||0) * 1.0322) + 'i,temp_mesh=' + (d.mc||0) + ' ' + ts);
+lines.push('systeem agg_seq=' + (d.a||0) + 'i,rssi_lora=' + (d.r||0) + ',vbat_agg=' + Math.round((d.av||0) * 0.9552) + 'i,temp_agg=' + (d.ac||0) + ',rssi_heltec=' + (d.lr||0) + ',snr_heltec=' + (d.ls||0) + ',lnHel_vbat=' + Math.round((d['lnHelTuin-vbat']||0) * 1.2020) + 'i,lnC3_vbat=' + Math.round((d['lnC3-vbat']||0) * 0.9763) + 'i,mqtt_vbat=' + Math.round((d['lnHelTuin-tbat']||0) * 1.0322) + 'i,temp_mesh=' + (d.mc||0) + ' ' + ts);
 
 if (d.wf !== undefined) {
   lines.push('waterflow pulsen=' + d.wf + 'i ' + ts);
@@ -11,9 +11,9 @@ if (d.wf !== undefined) {
 if (Array.isArray(d.s)) {
   d.s.forEach(function(a) {
     if (a.length === 7) {
-      lines.push('soil1 temperatuur=' + a[0] + ',vochtigheid=' + a[1] + ',ec=' + Math.round(a[2]) + 'i,temp_case=' + a[3] + ',vbat=' + a[4] + 'i,rssi=' + a[5] + ',ph=' + a[6] + ' ' + ts);
+      lines.push('soil1 temperatuur=' + a[0] + ',vochtigheid=' + a[1] + ',ec=' + Math.round(a[2]) + 'i,temp_case=' + a[3] + ',vbat=' + a[4] + 'i,rssi=' + a[5] + ',ph=' + (a[6] + 2.0) + ' ' + ts);
     } else if (a.length === 5) {
-      lines.push('soil2 temperatuur=' + a[0] + ',vochtigheid=' + a[1] + ',temp_case=' + a[2] + ',vbat=' + Math.round(a[3] * 1.0323) + 'i,rssi=' + a[4] + ' ' + ts);
+      lines.push('soil2 temperatuur=' + a[0] + ',vochtigheid=' + a[1] + ',temp_case=' + a[2] + ',vbat=' + Math.round(a[3] * 0.9901) + 'i,rssi=' + a[4] + ' ' + ts);
     } else if (a.length === 4) {
       lines.push('flow flow_rate=' + a[0] + ',total_liters=' + a[1] + ',vbat=' + a[2] + 'i,rssi=' + a[3] + ' ' + ts);
     }
